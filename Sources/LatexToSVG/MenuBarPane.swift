@@ -11,7 +11,7 @@ struct MenuBarPane: View {
     @Bindable var model: AppModel
 
     private let paneWidth: CGFloat = 320
-    private let previewHeight: CGFloat = 140
+    private let previewHeight: CGFloat = 180
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -19,7 +19,7 @@ struct MenuBarPane: View {
 
             TextEditor(text: $model.latex)
                 .font(.system(.callout, design: .monospaced))
-                .frame(height: 64)
+                .frame(height: 96)
                 .scrollContentBackground(.hidden)
                 .padding(4)
                 .background(RoundedRectangle(cornerRadius: 6)
