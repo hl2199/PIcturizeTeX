@@ -3,11 +3,19 @@
 <head>
 <meta charset="utf-8">
 <script>
+  // Every extension named here is vendored under mathjax/input/tex/extensions/
+  // and loaded up front. Preloading keeps rendering fully synchronous: MathJax's
+  // on-demand loading (and its promise API) stalls in this offline webview, so
+  // nothing may be left to load at render time.
+  var EXTENSIONS = ['ams', 'amscd', 'bbm', 'bboldx', 'bbox', 'begingroup',
+                    'boldsymbol', 'braket', 'bussproofs', 'cancel', 'cases',
+                    'centernot', 'color', 'colortbl', 'configmacros', 'dsfont',
+                    'empheq', 'enclose', 'extpfeil', 'gensymb', 'html',
+                    'mathtools', 'mhchem', 'newcommand', 'physics', 'textcomp',
+                    'textmacros', 'unicode', 'units', 'upgreek', 'verb'];
   window.MathJax = {
-    tex: { packages: { '[+]': ['ams', 'newcommand', 'configmacros', 'action', 'bbox',
-                               'boldsymbol', 'braket', 'cancel', 'color', 'enclose',
-                               'extpfeil', 'html', 'mhchem', 'physics', 'unicode',
-                               'verb'] } },
+    loader: { load: EXTENSIONS.map(function (e) { return '[tex]/' + e; }) },
+    tex: { packages: { '[+]': EXTENSIONS } },
     // fontCache 'none' inlines every glyph path instead of emitting <use>
     // references into a shared <defs>. Larger output, but each SVG is standalone
     // and free of element ids that could collide when several equations are
@@ -19,6 +27,9 @@
     // so it breaks after the first atom and the equation comes out truncated --
     // and an equation exported as an image must never wrap regardless.
     svg: { fontCache: 'none', linebreaks: { inline: false } },
+    // No speech or braille: their worker cannot run offline, and an exported
+    // image has no use for them.
+    options: { enableSpeech: false, enableBraille: false },
     startup: { typeset: false }
   };
 </script>
@@ -37,6 +48,7 @@
 // The arguments arrive as ordinary JavaScript strings: Swift interpolates them
 // into this call as JSON string literals, so they are already decoded by the
 // time the function runs. Parsing them again here would be wrong.
+//
 window.renderEquation = function (latex, preamble, displayMode) {
   try {
     // Macros defined in the preamble must be in scope for the equation, so they

@@ -14,6 +14,44 @@ final class ProbeDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         Task {
             do {
+                // With PKGPROBE=1, sweep package-specific syntax instead of
+                // the standard checks: reports which LaTeX packages' commands
+                // the bundled MathJax actually accepts.
+                if ProcessInfo.processInfo.environment["PKGPROBE"] != nil {
+                    let cases: [(String, String)] = [
+                        ("ams align", #"\begin{align} a &= b \ c &= d \end{align}"#),
+                        ("ams matrices", #"\begin{pmatrix} a & b \ c & d \end{pmatrix}"#),
+                        ("physics dv", #"\dv{f}{x} + \pdv[2]{g}{t}"#),
+                        ("physics abs norm", #"\abs{x} \norm{v}"#),
+                        ("physics comm", #"\comm{\hat{H}}{\hat{p}}"#),
+                        ("braket", #"\ket{\psi} \bra{\phi} \braket{\phi|\psi}"#),
+                        ("mhchem ce", #"\ce{2H2 + O2 -> 2H2O}"#),
+                        ("cancel", #"\cancel{x} + \bcancel{y}"#),
+                        ("boldsymbol", #"\boldsymbol{\alpha}"#),
+                        ("mathtools coloneqq", #"x \coloneqq y"#),
+                        ("mathtools dcases", #"\begin{dcases} a & x>0 \ b & x<0 \end{dcases}"#),
+                        ("upgreek", #"\upalpha"#),
+                        // noundefined renders unknown commands as red literal text rather
+                        // than erroring, so unsupported packages "succeed" visually wrong.
+                        ("siunitx (unsupported, renders red)", #"\SI{3e8}{\metre\per\second}"#),
+                        ("tikz (expect fail)", #"\begin{tikzpicture}\end{tikzpicture}"#),
+                        ("usepackage (unsupported, renders red)", #"\usepackage{physics} x"#),
+                        ("preamble newcommand", #"\R^n"#),
+                    ]
+                    for (name, tex) in cases {
+                        let preamble = name.hasPrefix("preamble")
+                            ? #"\newcommand{\R}{\mathbb{R}}"# : ""
+                        do {
+                            let r = try await engine.render(latex: tex, preamble: preamble,
+                                                            displayMode: true)
+                            print("PKG OK    \(name)  (\(r.widthEx) ex wide)")
+                        } catch let RenderError.invalidTeX(msg) {
+                            print("PKG FAIL  \(name): \(msg)")
+                        }
+                    }
+                    exit(0)
+                }
+
                 // Inline once truncated to the first atom (MathJax 4 inline
                 // linebreaking); both modes must produce a full-width equation.
                 for display in [true, false] {
