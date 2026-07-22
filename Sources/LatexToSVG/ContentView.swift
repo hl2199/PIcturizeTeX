@@ -59,15 +59,16 @@ struct ContentView: View {
         }
     }
 
-    /// How much the sheet is magnified on screen. The export always uses the
-    /// exact configured size; the display scales the vector up to fill the
-    /// desk (capped, so a tiny inline fragment does not become a poster) and
-    /// down to fit when the equation is larger than the pane.
+    /// The sheet shows the equation at its true export size -- the scaling
+    /// controls are WYSIWYG -- shrinking only when the equation is larger than
+    /// the pane. It is never magnified: an equation that looks too small here
+    /// will be exactly that small in the exported file, and the honest remedy
+    /// is a larger scale setting.
     private func displayZoom(in available: CGSize) -> Double {
         guard model.pixelWidth > 0, model.pixelHeight > 0 else { return 1 }
         let maxWidth = max(available.width - 100, 160)
         let maxHeight = max(available.height - 150, 90)
-        return min(min(maxWidth / model.pixelWidth, maxHeight / model.pixelHeight), 4)
+        return min(min(maxWidth / model.pixelWidth, maxHeight / model.pixelHeight), 1)
     }
 
     private func paperSheet(available: CGSize) -> some View {
