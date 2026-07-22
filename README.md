@@ -37,6 +37,9 @@ notarization.
   with their settings. Toggled from the toolbar; open/closed state persists across
   launches.
 - **Macro preamble**: a persistent `\newcommand` block applied to every render.
+- **Menu bar companion** (the π in your menu bar): a compact editor with live
+  preview, color and scale pickers, drag-out, right-click copy, and save — always
+  in display mode, and fully functional with the main window closed.
 
 ## Layout
 

@@ -4,12 +4,22 @@ import SwiftUI
 @main
 struct LatexToSVGApp: App {
     @State private var model = AppModel()
+    /// The menu bar companion runs on its own instance, so it works with the
+    /// main window closed and always renders in display mode.
+    @State private var menuBarModel = AppModel(menuBarLite: true)
 
     var body: some Scene {
         WindowGroup {
             ContentView(model: model)
         }
         .commands { commands }
+
+        MenuBarExtra {
+            MenuBarPane(model: menuBarModel)
+        } label: {
+            Text("π")
+        }
+        .menuBarExtraStyle(.window)
     }
 
     /// Copy is deliberately not bound to Command-C. The equation editor is a

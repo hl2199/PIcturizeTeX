@@ -110,10 +110,18 @@ final class AppModel {
     /// half-typed font name does not collapse the equation to nothing.
     private var lastMeasuredPixelsPerEx: Double?
 
-    init() {
+    /// True for the menu bar companion: a second, simpler instance that always
+    /// renders in display mode and does not write history, so it can never
+    /// clobber the main window's history file.
+    let isMenuBarLite: Bool
+
+    init(menuBarLite: Bool = false) {
+        isMenuBarLite = menuBarLite
         // Storage failures must not prevent the app from running; the user
         // simply gets a session without history rather than no app at all.
-        historyStore = try? HistoryStore()
+        historyStore = menuBarLite ? nil : try? HistoryStore()
+        // The preamble is read either way, so equations render identically in
+        // both places; only the main window edits it.
         preambleStore = try? PreambleStore()
         preamble = preambleStore?.text ?? ""
         history = historyStore?.entries ?? []

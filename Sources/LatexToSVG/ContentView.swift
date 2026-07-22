@@ -30,9 +30,26 @@ struct ContentView: View {
     @MainActor
     private static func runUIProbeIfRequested() async {
         guard let path = ProcessInfo.processInfo.environment["UIPROBE_PNG"] else { return }
-        try? await Task.sleep(for: .seconds(3))
-        guard let window = NSApp.windows.first(where: { $0.isVisible }),
-              let view = window.contentView,
+
+        // With UIPROBE_MENUBAR set, capture the menu bar pane instead of the
+        // main window. The pane is hosted in a throwaway window because the
+        // real popover only exists while the status item is open.
+        if ProcessInfo.processInfo.environment["UIPROBE_MENUBAR"] != nil {
+            let host = NSWindow(contentViewController:
+                NSHostingController(rootView: MenuBarPane(model: AppModel(menuBarLite: true))))
+            host.setFrameOrigin(NSPoint(x: -30000, y: -30000))
+            host.orderBack(nil)
+            try? await Task.sleep(for: .seconds(3))
+            capture(host.contentView, to: path)
+        } else {
+            try? await Task.sleep(for: .seconds(3))
+            capture(NSApp.windows.first(where: { $0.isVisible })?.contentView, to: path)
+        }
+    }
+
+    @MainActor
+    private static func capture(_ view: NSView?, to path: String) {
+        guard let view,
               let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
             print("UIPROBE: no window to capture")
             exit(1)
