@@ -59,8 +59,13 @@ final class AppModel {
     var colorChoice: ColorChoice = .black { didSet { scheduleRender() } }
     var customColorText = "#0066cc" { didSet { scheduleRender() } }
     var scaleChoice: ScaleChoice = .standard { didSet { scheduleRender() } }
-    var fontCSSText = "20px Helvetica" { didSet { scheduleRender() } }
+    var fontFamily = "Helvetica" { didSet { scheduleRender() } }
+    var fontSize: Double = 20 { didSet { scheduleRender() } }
     var manualPixelsPerEx: Double = 15 { didSet { scheduleRender() } }
+
+    /// The CSS font shorthand the measurement engine expects, assembled from
+    /// the two separate controls.
+    var fontCSS: String { "\(SVGDocument.format(fontSize))px \"\(fontFamily)\"" }
 
     // MARK: Export options
 
@@ -161,20 +166,13 @@ final class AppModel {
     var scaleMode: ScaleMode {
         switch scaleChoice {
         case .standard: return .standard
-        case .matchFont: return .matchFont(fontCSSText)
+        case .matchFont: return .matchFont(fontCSS)
         case .manual: return .manual(manualPixelsPerEx)
         }
     }
 
     var currentSettings: RenderSettings {
         RenderSettings(displayMode: displayMode, color: colorMode, scale: scaleMode)
-    }
-
-    /// Human-readable summary of the active scale, shown beneath the controls
-    /// the way the website reports `1 ex = 8 px`.
-    var scaleSummary: String {
-        let factor = (try? resolvedPixelsPerExSynchronously()) ?? Scaling.defaultPixelsPerEx
-        return "1 ex = \(SVGDocument.format(factor)) px"
     }
 
     // MARK: - Rendering
@@ -245,20 +243,11 @@ final class AppModel {
         case .matchFont:
             // `try?` flattens the engine's optional result, so a nil here means
             // either a measurement failure or an unusable font string.
-            if let measured = try? await engine.pixelsPerEx(cssFont: fontCSSText) {
+            if let measured = try? await engine.pixelsPerEx(cssFont: fontCSS) {
                 lastMeasuredPixelsPerEx = measured
                 return measured
             }
             return lastMeasuredPixelsPerEx ?? Scaling.defaultPixelsPerEx
-        }
-    }
-
-    /// The factor without touching the engine, for display purposes only.
-    private func resolvedPixelsPerExSynchronously() throws -> Double {
-        switch scaleChoice {
-        case .standard: return Scaling.defaultPixelsPerEx
-        case .manual: return manualPixelsPerEx
-        case .matchFont: return lastMeasuredPixelsPerEx ?? Scaling.defaultPixelsPerEx
         }
     }
 
@@ -342,7 +331,12 @@ final class AppModel {
             manualPixelsPerEx = value
         case .matchFont(let css):
             scaleChoice = .matchFont
-            fontCSSText = css
+            // History stores the assembled shorthand; split it back into the
+            // two controls. An unparseable value keeps the current fields.
+            if let match = css.firstMatch(of: /^\s*([0-9.]+)px\s+"?([^"]+?)"?\s*$/) {
+                fontSize = Double(match.1) ?? fontSize
+                fontFamily = String(match.2)
+            }
         }
         renderNow()
     }

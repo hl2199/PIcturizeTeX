@@ -75,20 +75,20 @@ struct SettingsPane: View {
                     .foregroundStyle(.secondary)
 
             case .matchFont:
-                HStack(spacing: 8) {
-                    TextField("CSS font", text: $model.fontCSSText)
-                        .textFieldStyle(.roundedBorder)
-                    Menu {
-                        ForEach(NSFontManager.shared.availableFontFamilies, id: \.self) { family in
-                            Button(family) { model.fontCSSText = "20px \"\(family)\"" }
-                        }
-                    } label: {
-                        Image(systemName: "textformat")
+                Picker("Font", selection: $model.fontFamily) {
+                    ForEach(NSFontManager.shared.availableFontFamilies, id: \.self) { family in
+                        Text(family).tag(family)
                     }
-                    .menuStyle(.borderlessButton)
-                    .frame(width: 28)
-                    .help("Choose an installed font")
                 }
+
+                HStack(spacing: 6) {
+                    Text("Size")
+                    TextField("", value: $model.fontSize, format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 60)
+                    Text("px")
+                }
+
                 Text("The equation is scaled so its x-height matches this font.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -102,10 +102,6 @@ struct SettingsPane: View {
                     Text("px")
                 }
             }
-
-            Text(model.scaleSummary)
-                .font(.caption.monospaced())
-                .foregroundStyle(.secondary)
         }
     }
 
