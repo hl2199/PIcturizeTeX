@@ -1,29 +1,29 @@
 # PIcturizeTeX
 
-A native Mac app that turns LaTeX equations into pictures — SVG, PDF, and PNG — with
-every feature of [viereck.ch/latex-to-svg](https://viereck.ch/latex-to-svg/), plus the
-things a web page can't do. Equations are rendered by a bundled MathJax 4, entirely
-offline.
+A native Mac app that turns LaTeX equations into pictures — SVG, PDF, and PNG. For use in your figures, presentations, and whatever else you may need it for. Live preview, easy drag and drop, quick menu bar access, customizable color and size.
 
-![PIcturizeTeX main window](docs/screenshot-main.png)
+<img width="800" height="528" alt="Screenshot 2026-07-22 at 5 10 58 PM" src="https://github.com/user-attachments/assets/a090e9f4-8d2c-4fed-9fa5-f228fd6a62d7" />
+
+Also has a menu bar option that can be toggled on and off, for quick on-the-go generation with all the core features:
+
+<img width="779" height="542" alt="Screenshot 2026-07-22 at 5 47 56 PM" src="https://github.com/user-attachments/assets/79129ee4-d4e8-445b-a13d-7240fa91565d" />
+
 
 ## Install
 
 Download the latest `PIcturizeTeX-x.y.z.zip` from
 [Releases](../../releases), unzip it, and drag `PIcturizeTeX.app` into
-`/Applications`.
+`/Applications`. 
 
-**First launch:** this build is not notarized (no Apple Developer account), so
-macOS will refuse to open it at first. Open **System Settings → Privacy &
+Binary requires macOS 14 or later on Apple Silicon. Intel Macs: build from source. 
+
+**First launch:** this build is not notarized (no Apple Developer account), so on a first run,
+macOS will raise a security warning. Open **System Settings → Privacy &
 Security**, scroll down to the message about PIcturizeTeX, and click **Open
 Anyway** — needed only once. If you would rather not trust a downloaded
 binary, build it from source below; it takes about a minute.
 
-Requires macOS 14 or later on Apple Silicon. Intel Macs: build from source.
-
-## Build and run
-
-Requires only the Xcode Command Line Tools (no Xcode):
+### Build from source:
 
 ```sh
 ./Scripts/bundle.sh            # builds and assembles build/PIcturizeTeX.app
@@ -32,6 +32,8 @@ open build/PIcturizeTeX.app
 
 Release build: `./Scripts/bundle.sh release`. Tests: `swift test`.
 Release zip: `./Scripts/release.sh <version>`.
+
+Requires only the Xcode Command Line Tools (no Xcode).
 
 ## What it does
 
