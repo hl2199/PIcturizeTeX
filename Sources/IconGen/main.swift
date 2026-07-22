@@ -15,10 +15,10 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
             do {
                 let outDir = URL(fileURLWithPath: CommandLine.arguments[1], isDirectory: true)
 
-                // The glyph, in the app's accent iron gall.
+                // The glyph, in the app's accent viridian.
                 let r = try await engine.render(latex: #"\pi"#, preamble: "", displayMode: true)
                 let svg = SVGDocument.finalize(rawSVG: r.svg, widthEx: r.widthEx, heightEx: r.heightEx,
-                                               pixelsPerEx: 100, color: .custom("#3C3A55"))
+                                               pixelsPerEx: 100, color: .custom("#2E6E5E"))
                 let size = SVGDocument.pixelSize(widthEx: r.widthEx, heightEx: r.heightEx, pixelsPerEx: 100)
                 let pdf = try await exporter.pdfData(svg: svg, widthPx: size.width, heightPx: size.height)
                 // Rasterise so the glyph is ~480 px tall on the 1024 canvas.
