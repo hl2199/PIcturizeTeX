@@ -13,7 +13,8 @@ struct HistoryPane: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("History")
-                    .font(.headline)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
                 Spacer()
                 if !model.history.isEmpty {
                     Button("Clear", action: model.clearHistory)
@@ -22,7 +23,7 @@ struct HistoryPane: View {
                 }
             }
             .padding(.horizontal, 12)
-            .padding(.vertical, 10)
+            .padding(.vertical, 8)
 
             Divider()
 
@@ -61,16 +62,17 @@ struct HistoryPane: View {
     private func row(_ entry: HistoryEntry) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             if let image = thumbnail(for: entry) {
-                // Always on a white chip: the stored equation has a fixed
-                // colour, and this keeps it readable in dark mode too.
+                // Each thumbnail sits on its own paper chip, matching the main
+                // sheet -- dark paper when the equation was exported in white.
                 Image(nsImage: image)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(maxWidth: .infinity, maxHeight: 44, alignment: .leading)
                     .padding(6)
-                    .background(RoundedRectangle(cornerRadius: 5).fill(.white))
-                    .overlay(RoundedRectangle(cornerRadius: 5)
-                        .stroke(Color.secondary.opacity(0.2)))
+                    .background(RoundedRectangle(cornerRadius: 6)
+                        .fill(entry.settings.color == .white ? Theme.paperDark : Theme.paperLight))
+                    .overlay(RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.secondary.opacity(0.18)))
             } else {
                 Text(entry.latex)
                     .font(.system(.caption, design: .monospaced))

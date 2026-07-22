@@ -2,58 +2,41 @@ import AppKit
 import LatexCore
 import SwiftUI
 
-/// The right-hand pane: everything that changes how the equation looks or is
-/// exported.
+/// The right-hand pane, set as a native grouped form: quiet, dense, and
+/// unmistakably macOS.
 struct SettingsPane: View {
     @Bindable var model: AppModel
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
-                colorSection
-                Divider()
-                scaleSection
-                Divider()
-                renderingSection
-                Divider()
-                exportSection
-                Divider()
-                preambleSection
-            }
-            .padding(16)
+        Form {
+            colorSection
+            scaleSection
+            renderingSection
+            exportSection
+            preambleSection
         }
-        .frame(width: 280)
+        .formStyle(.grouped)
+        .frame(width: 310)
     }
 
     // MARK: Colour
 
     private var colorSection: some View {
-        Section("Colour") {
-            Picker("", selection: $model.colorChoice) {
+        Section("Color") {
+            Picker("Color", selection: $model.colorChoice) {
                 ForEach(ColorChoice.allCases) { Text($0.label).tag($0) }
             }
-            .pickerStyle(.radioGroup)
+            .pickerStyle(.segmented)
             .labelsHidden()
 
             if model.colorChoice == .custom {
-                // The colour well is the primary control; the CSS field is the
-                // escape hatch for named colours and exact values.
-                ColorPicker("Colour", selection: Binding(
+                ColorPicker("Custom color", selection: Binding(
                     get: { Color(nsColor: NSColor(css: model.customColorText) ?? .labelColor) },
                     set: { model.customColorText = $0.cssHexString }
                 ))
 
-                HStack(spacing: 6) {
-                    Text("CSS")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    TextField("#0066cc", text: $model.customColorText)
-                        .textFieldStyle(.roundedBorder)
-                        .font(.caption.monospaced())
-                }
-                Text("Any CSS colour works here, for example rebeccapurple.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                TextField("CSS value", text: $model.customColorText)
+                    .font(.body.monospaced())
             }
         }
     }
@@ -61,18 +44,16 @@ struct SettingsPane: View {
     // MARK: Scale
 
     private var scaleSection: some View {
-        Section("Scaling") {
-            Picker("", selection: $model.scaleChoice) {
-                ForEach(ScaleChoice.allCases) { Text($0.label).tag($0) }
+        Section {
+            Picker("Mode", selection: $model.scaleChoice) {
+                Text("Default (1 ex = 8 px)").tag(ScaleChoice.standard)
+                Text("Match a font").tag(ScaleChoice.matchFont)
+                Text("Manual").tag(ScaleChoice.manual)
             }
-            .pickerStyle(.radioGroup)
-            .labelsHidden()
 
             switch model.scaleChoice {
             case .standard:
-                Text("1 ex = 8 px.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                EmptyView()
 
             case .matchFont:
                 Picker("Font", selection: $model.fontFamily) {
@@ -80,27 +61,16 @@ struct SettingsPane: View {
                         Text(family).tag(family)
                     }
                 }
-
-                HStack(spacing: 6) {
-                    Text("Size")
-                    TextField("", value: $model.fontSize, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 60)
-                    Text("px")
-                }
-
-                Text("The equation is scaled so its x-height matches this font.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                TextField("Size (px)", value: $model.fontSize, format: .number)
 
             case .manual:
-                HStack(spacing: 6) {
-                    Text("1 ex =")
-                    TextField("", value: $model.manualPixelsPerEx, format: .number)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 60)
-                    Text("px")
-                }
+                TextField("Pixels per ex", value: $model.manualPixelsPerEx, format: .number)
+            }
+        } header: {
+            Text("Scale")
+        } footer: {
+            if model.scaleChoice == .matchFont {
+                Text("The equation is scaled so its x-height matches this font.")
             }
         }
     }
@@ -108,86 +78,56 @@ struct SettingsPane: View {
     // MARK: Rendering
 
     private var renderingSection: some View {
-        Section("Rendering") {
-            Picker("", selection: $model.displayMode) {
+        Section {
+            Picker("Style", selection: $model.displayMode) {
                 Text("Display").tag(true)
                 Text("Inline").tag(false)
             }
             .pickerStyle(.segmented)
             .labelsHidden()
+        } header: {
+            Text("Rendering")
+        } footer: {
             Text("Display uses standalone-equation proportions, as \\[ … \\] does; "
                  + "inline uses the compact style of math inside a sentence, as $ … $ does.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
         }
     }
 
     // MARK: Export
 
     private var exportSection: some View {
-        Section("Export") {
-            HStack {
-                Text("PNG resolution")
-                Spacer()
-                Picker("", selection: $model.pngDPI) {
-                    Text("96 dpi").tag(96.0)
-                    Text("192 dpi").tag(192.0)
-                    Text("300 dpi").tag(300.0)
-                    Text("600 dpi").tag(600.0)
-                }
-                .labelsHidden()
-                .frame(width: 110)
+        Section {
+            Picker("PNG resolution", selection: $model.pngDPI) {
+                Text("96 dpi").tag(96.0)
+                Text("192 dpi").tag(192.0)
+                Text("300 dpi").tag(300.0)
+                Text("600 dpi").tag(600.0)
             }
 
-            HStack {
-                Text("Drag exports")
-                Spacer()
-                Picker("", selection: $model.dragFormat) {
-                    ForEach(ExportFormat.allCases, id: \.self) { Text($0.displayName).tag($0) }
-                }
-                .labelsHidden()
-                .frame(width: 110)
+            Picker("Drag format", selection: $model.dragFormat) {
+                ForEach(ExportFormat.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
-            Text("A drag produces one file, so it uses a single format. "
-                 + "Copy puts all three on the clipboard at once.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+        } header: {
+            Text("Export")
+        } footer: {
+            Text("A drag produces one file in this format. "
+                 + "Copy puts PDF, PNG and SVG on the clipboard at once.")
         }
     }
 
     // MARK: Preamble
 
     private var preambleSection: some View {
-        Section("Macro preamble") {
+        Section {
             TextEditor(text: $model.preamble)
                 .font(.system(.caption, design: .monospaced))
-                .frame(height: 80)
-                .overlay(RoundedRectangle(cornerRadius: 5)
-                    .stroke(Color.secondary.opacity(0.3)))
-            Text("Applied to every equation, and saved between launches. "
-                 + "For example \\newcommand{\\R}{\\mathbb{R}}.")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    /// A titled group, laid out consistently across the pane.
-    private struct Section<Content: View>: View {
-        let title: String
-        @ViewBuilder let content: Content
-
-        init(_ title: String, @ViewBuilder content: () -> Content) {
-            self.title = title
-            self.content = content()
-        }
-
-        var body: some View {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(title)
-                    .font(.headline)
-                content
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: 88)
+                .scrollContentBackground(.hidden)
+        } header: {
+            Text("Macro preamble")
+        } footer: {
+            Text("Applied to every equation and saved between launches, "
+                 + "for example \\newcommand{\\R}{\\mathbb{R}}.")
         }
     }
 }
@@ -196,7 +136,7 @@ struct SettingsPane: View {
 
 extension NSColor {
     /// Parses the subset of CSS colours worth round-tripping through the colour
-    /// well: `#rgb`, `#rrggbb`, and any name AppKit already knows.
+    /// well: `#rgb` and `#rrggbb`.
     convenience init?(css: String) {
         var text = css.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !text.isEmpty else { return nil }
