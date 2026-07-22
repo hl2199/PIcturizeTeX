@@ -3,9 +3,9 @@ import SwiftUI
 /// The app's small design vocabulary, drawn from mathematical publishing:
 /// a sheet of paper on a drafting desk, with one journal-spine red accent.
 enum Theme {
-    /// Prussian blue -- the colour of blueprints and old engineering plates.
-    /// The only accent colour; replaces the default blue tint everywhere.
-    static let accent = Color(red: 0.176, green: 0.290, blue: 0.439)
+    /// Iron gall -- the blue-black of antique manuscript ink. The only accent
+    /// colour; replaces the default blue tint everywhere.
+    static let accent = Color(red: 0.235, green: 0.227, blue: 0.333)
 
     /// Warm paper for the equation sheet -- just off pure white, so the sheet
     /// reads as material rather than as empty screen.
