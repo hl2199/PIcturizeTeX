@@ -40,16 +40,13 @@ struct SettingsPane: View {
             radioRow("Custom", selected: model.colorChoice == .custom) {
                 model.colorChoice = .custom
             } trailing: {
+                // The system colour panel carries its own hex entry, so the
+                // well is the only control needed here.
                 ColorPicker("", selection: Binding(
                     get: { Color(nsColor: NSColor(css: model.customColorText) ?? .labelColor) },
                     set: { model.customColorText = $0.cssHexString }
                 ))
                 .labelsHidden()
-
-                TextField("#0066cc", text: $model.customColorText)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.caption.monospaced())
-                    .frame(width: 110)
             }
         }
     }
@@ -66,26 +63,26 @@ struct SettingsPane: View {
 
             radioRow("Match a font", selected: model.scaleChoice == .matchFont) {
                 model.scaleChoice = .matchFont
-            } trailing: {
+            } detail: {
                 Picker("", selection: $model.fontFamily) {
                     ForEach(NSFontManager.shared.availableFontFamilies, id: \.self) { family in
                         Text(family).tag(family)
                     }
                 }
                 .labelsHidden()
-                .frame(maxWidth: 110)
+                .frame(maxWidth: 170)
 
                 TextField("", value: $model.fontSize, format: .number)
                     .textFieldStyle(.roundedBorder)
                     .multilineTextAlignment(.trailing)
-                    .frame(width: 40)
+                    .frame(width: 44)
                 Text("px")
                     .foregroundStyle(.secondary)
             }
 
             radioRow("Manual", selected: model.scaleChoice == .manual) {
                 model.scaleChoice = .manual
-            } trailing: {
+            } detail: {
                 Text("1 ex =")
                     .foregroundStyle(.secondary)
                 TextField("", value: $model.manualPixelsPerEx, format: .number)
@@ -98,30 +95,41 @@ struct SettingsPane: View {
         }
     }
 
-    /// A radio option whose controls live inline on the same row: clicking the
-    /// title selects the option, and the trailing controls stay put whether or
-    /// not it is selected.
-    private func radioRow<Trailing: View>(_ title: String,
-                                          selected: Bool,
-                                          select: @escaping () -> Void,
-                                          @ViewBuilder trailing: () -> Trailing) -> some View {
-        HStack(spacing: 8) {
-            Button(action: select) {
-                HStack(spacing: 6) {
-                    Image(systemName: selected ? "inset.filled.circle" : "circle")
-                        .foregroundStyle(selected ? Theme.accent : Color.secondary)
-                    Text(title)
+    /// A radio option whose controls are always visible, so selecting never
+    /// reshapes the form. A compact control sits inline at the trailing edge;
+    /// anything wider goes on a `detail` line beneath the title, indented to a
+    /// shared left edge so the columns align. Controls respond only while
+    /// their option is the selected one.
+    private func radioRow<Trailing: View, Detail: View>(
+        _ title: String,
+        selected: Bool,
+        select: @escaping () -> Void,
+        @ViewBuilder trailing: () -> Trailing = { EmptyView() },
+        @ViewBuilder detail: () -> Detail = { EmptyView() }
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 8) {
+                Button(action: select) {
+                    HStack(spacing: 6) {
+                        Image(systemName: selected ? "inset.filled.circle" : "circle")
+                            .foregroundStyle(selected ? Theme.accent : Color.secondary)
+                        Text(title)
+                    }
+                    .contentShape(Rectangle())
                 }
-                .contentShape(Rectangle())
+                .buttonStyle(.plain)
+
+                Spacer(minLength: 0)
+
+                trailing()
+                    .disabled(!selected)
             }
-            .buttonStyle(.plain)
 
-            Spacer(minLength: 0)
-
-            // The controls stay visible either way -- static layout -- but only
-            // respond while their option is the active one.
-            trailing()
-                .disabled(!selected)
+            HStack(spacing: 6) {
+                detail()
+                    .disabled(!selected)
+            }
+            .padding(.leading, 22)
         }
     }
 
