@@ -22,5 +22,8 @@ let package = Package(
 
         // Diagnostic harness for the exporter's window hosting; not shipped.
         .executableTarget(name: "ExportProbe", dependencies: ["LatexCore", "LatexRender"]),
+
+        // Generates Assets/AppIcon.icns from the app's own render engine; not shipped.
+        .executableTarget(name: "IconGen", dependencies: ["LatexCore", "LatexRender"]),
     ]
 )
