@@ -16,27 +16,40 @@ struct SettingsPane: View {
             preambleSection
         }
         .formStyle(.grouped)
-        .frame(width: 310)
+        .frame(width: 330)
     }
 
     // MARK: Colour
 
+    /// Every option owns one permanent row with its controls inline, so
+    /// selecting an option never adds or removes rows -- the layout is static.
     private var colorSection: some View {
         Section("Color") {
-            Picker("Color", selection: $model.colorChoice) {
-                ForEach(ColorChoice.allCases) { Text($0.label).tag($0) }
+            radioRow("Black", selected: model.colorChoice == .black) {
+                model.colorChoice = .black
+            } trailing: {
+                EmptyView()
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
 
-            if model.colorChoice == .custom {
-                ColorPicker("Custom color", selection: Binding(
+            radioRow("White", selected: model.colorChoice == .white) {
+                model.colorChoice = .white
+            } trailing: {
+                EmptyView()
+            }
+
+            radioRow("Custom", selected: model.colorChoice == .custom) {
+                model.colorChoice = .custom
+            } trailing: {
+                ColorPicker("", selection: Binding(
                     get: { Color(nsColor: NSColor(css: model.customColorText) ?? .labelColor) },
                     set: { model.customColorText = $0.cssHexString }
                 ))
+                .labelsHidden()
 
-                TextField("CSS value", text: $model.customColorText)
-                    .font(.body.monospaced())
+                TextField("#0066cc", text: $model.customColorText)
+                    .textFieldStyle(.roundedBorder)
+                    .font(.caption.monospaced())
+                    .frame(width: 110)
             }
         }
     }
@@ -44,34 +57,71 @@ struct SettingsPane: View {
     // MARK: Scale
 
     private var scaleSection: some View {
-        Section {
-            Picker("Mode", selection: $model.scaleChoice) {
-                Text("Default (1 ex = 8 px)").tag(ScaleChoice.standard)
-                Text("Match a font").tag(ScaleChoice.matchFont)
-                Text("Manual").tag(ScaleChoice.manual)
+        Section("Scale") {
+            radioRow("Default (1 ex = 8 px)", selected: model.scaleChoice == .standard) {
+                model.scaleChoice = .standard
+            } trailing: {
+                EmptyView()
             }
 
-            switch model.scaleChoice {
-            case .standard:
-                EmptyView()
-
-            case .matchFont:
-                Picker("Font", selection: $model.fontFamily) {
+            radioRow("Match a font", selected: model.scaleChoice == .matchFont) {
+                model.scaleChoice = .matchFont
+            } trailing: {
+                Picker("", selection: $model.fontFamily) {
                     ForEach(NSFontManager.shared.availableFontFamilies, id: \.self) { family in
                         Text(family).tag(family)
                     }
                 }
-                TextField("Size (px)", value: $model.fontSize, format: .number)
+                .labelsHidden()
+                .frame(maxWidth: 110)
 
-            case .manual:
-                TextField("Pixels per ex", value: $model.manualPixelsPerEx, format: .number)
+                TextField("", value: $model.fontSize, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 40)
+                Text("px")
+                    .foregroundStyle(.secondary)
             }
-        } header: {
-            Text("Scale")
-        } footer: {
-            if model.scaleChoice == .matchFont {
-                Text("The equation is scaled so its x-height matches this font.")
+
+            radioRow("Manual", selected: model.scaleChoice == .manual) {
+                model.scaleChoice = .manual
+            } trailing: {
+                Text("1 ex =")
+                    .foregroundStyle(.secondary)
+                TextField("", value: $model.manualPixelsPerEx, format: .number)
+                    .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.trailing)
+                    .frame(width: 44)
+                Text("px")
+                    .foregroundStyle(.secondary)
             }
+        }
+    }
+
+    /// A radio option whose controls live inline on the same row: clicking the
+    /// title selects the option, and the trailing controls stay put whether or
+    /// not it is selected.
+    private func radioRow<Trailing: View>(_ title: String,
+                                          selected: Bool,
+                                          select: @escaping () -> Void,
+                                          @ViewBuilder trailing: () -> Trailing) -> some View {
+        HStack(spacing: 8) {
+            Button(action: select) {
+                HStack(spacing: 6) {
+                    Image(systemName: selected ? "inset.filled.circle" : "circle")
+                        .foregroundStyle(selected ? Theme.accent : Color.secondary)
+                    Text(title)
+                }
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            Spacer(minLength: 0)
+
+            // The controls stay visible either way -- static layout -- but only
+            // respond while their option is the active one.
+            trailing()
+                .disabled(!selected)
         }
     }
 
@@ -88,13 +138,18 @@ struct SettingsPane: View {
         } header: {
             Text("Rendering")
         } footer: {
-            if model.displayMode {
-                Text("Standalone-equation proportions, as \\[ … \\] gives in a document: "
-                     + "full-size fractions, limits above and below big operators.")
-            } else {
-                Text("The compact style of math inside a sentence, as $ … $ gives: "
-                     + "smaller fractions, limits beside big operators.")
+            // A fixed height keeps the sections below from shifting when the
+            // caption swaps between the two descriptions.
+            Group {
+                if model.displayMode {
+                    Text("Standalone-equation proportions, as \\[ … \\] gives: "
+                         + "full-size fractions, limits above big operators.")
+                } else {
+                    Text("In-sentence proportions, as $ … $ gives: "
+                         + "compact fractions, limits beside big operators.")
+                }
             }
+            .frame(maxWidth: .infinity, minHeight: 32, alignment: .topLeading)
         }
     }
 

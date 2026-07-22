@@ -10,14 +10,6 @@ import Observation
 enum ColorChoice: String, CaseIterable, Identifiable {
     case black, white, custom
     var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .black: return "Black"
-        case .white: return "White"
-        case .custom: return "Custom"
-        }
-    }
 }
 
 /// Which scaling control is active. Separate from `ScaleMode` for the same
@@ -25,14 +17,6 @@ enum ColorChoice: String, CaseIterable, Identifiable {
 enum ScaleChoice: String, CaseIterable, Identifiable {
     case standard, matchFont, manual
     var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .standard: return "Default"
-        case .matchFont: return "Match a font"
-        case .manual: return "Manual"
-        }
-    }
 }
 
 /// All application state, and the only place that talks to the render engine.
