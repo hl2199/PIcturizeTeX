@@ -14,6 +14,19 @@ final class ProbeDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         Task {
             do {
+                // Inline once truncated to the first atom (MathJax 4 inline
+                // linebreaking); both modes must produce a full-width equation.
+                for display in [true, false] {
+                    do {
+                        let t = try await engine.render(
+                            latex: #"x = \sin \left( \frac{\pi}{2} \right)"#,
+                            preamble: "", displayMode: display)
+                        print("PROBE display=\(display): \(t.widthEx) x \(t.heightEx) ex, svg=\(t.svg.count) chars")
+                    } catch {
+                        print("PROBE display=\(display) FAILED: \(error)")
+                    }
+                }
+
                 let r = try await engine.render(latex: #"E = mc^2"#, preamble: "", displayMode: true)
                 let svg = SVGDocument.finalize(rawSVG: r.svg, widthEx: r.widthEx, heightEx: r.heightEx,
                                                pixelsPerEx: 8, color: .black)

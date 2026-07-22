@@ -8,11 +8,17 @@
                                'boldsymbol', 'braket', 'cancel', 'color', 'enclose',
                                'extpfeil', 'html', 'mhchem', 'physics', 'unicode',
                                'verb'] } },
-    // 'none' inlines every glyph path instead of emitting <use> references into a
-    // shared <defs>. Larger output, but each SVG is standalone and free of element
-    // ids that could collide when several equations are inlined in one document, or
-    // that some vector editors resolve poorly. Interop beats bytes here.
-    svg: { fontCache: 'none' },
+    // fontCache 'none' inlines every glyph path instead of emitting <use>
+    // references into a shared <defs>. Larger output, but each SVG is standalone
+    // and free of element ids that could collide when several equations are
+    // inlined in one document, or that some vector editors resolve poorly.
+    // Interop beats bytes here.
+    //
+    // linebreaks.inline is MathJax 4's automatic wrapping of inline math to the
+    // container width. Rendered synchronously there is no meaningful container,
+    // so it breaks after the first atom and the equation comes out truncated --
+    // and an equation exported as an image must never wrap regardless.
+    svg: { fontCache: 'none', linebreaks: { inline: false } },
     startup: { typeset: false }
   };
 </script>
