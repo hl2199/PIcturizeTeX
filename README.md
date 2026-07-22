@@ -5,6 +5,22 @@ every feature of [viereck.ch/latex-to-svg](https://viereck.ch/latex-to-svg/), pl
 things a web page can't do. Equations are rendered by a bundled MathJax 4, entirely
 offline.
 
+![PIcturizeTeX main window](docs/screenshot-main.png)
+
+## Install
+
+Download the latest `PIcturizeTeX-x.y.z.zip` from
+[Releases](../../releases), unzip it, and drag `PIcturizeTeX.app` into
+`/Applications`.
+
+**First launch:** this build is not notarized (no Apple Developer account), so
+macOS will refuse to open it at first. Open **System Settings → Privacy &
+Security**, scroll down to the message about PIcturizeTeX, and click **Open
+Anyway** — needed only once. If you would rather not trust a downloaded
+binary, build it from source below; it takes about a minute.
+
+Requires macOS 14 or later on Apple Silicon. Intel Macs: build from source.
+
 ## Build and run
 
 Requires only the Xcode Command Line Tools (no Xcode):
@@ -15,10 +31,7 @@ open build/PIcturizeTeX.app
 ```
 
 Release build: `./Scripts/bundle.sh release`. Tests: `swift test`.
-
-To install, copy `build/PIcturizeTeX.app` to `/Applications`. The bundle is ad-hoc
-signed — fine locally; distributing to others would need a Developer ID and
-notarization.
+Release zip: `./Scripts/release.sh <version>`.
 
 ## What it does
 
@@ -57,3 +70,9 @@ Data lives in `~/Library/Application Support/PIcturizeTeX/` (`history.json`,
 
 Replace `Sources/LatexRender/Resources/mathjax/tex-svg.js` with a newer
 `mathjax@N/tex-svg.js` from npm and rebuild. It's a single self-contained file.
+
+## License
+
+MIT — see [LICENSE](LICENSE). Equations are typeset by
+[MathJax](https://www.mathjax.org), which is bundled under the Apache License
+2.0 (`Sources/LatexRender/Resources/mathjax/LICENSE`).
