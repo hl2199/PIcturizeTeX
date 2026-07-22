@@ -9,6 +9,9 @@ import SwiftUI
 /// right-click copy reuse the same machinery as the desk.
 struct MenuBarPane: View {
     @Bindable var model: AppModel
+    /// Shared with the app scene's MenuBarExtra(isInserted:) and the settings
+    /// toggle, so removal here can be undone from the main window.
+    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
 
     private let paneWidth: CGFloat = 320
     private let previewHeight: CGFloat = 180
@@ -78,6 +81,19 @@ struct MenuBarPane: View {
                 }
                 .fixedSize()
                 .disabled(model.renderedSVG == nil)
+            }
+
+            HStack {
+                Button("Remove from menu bar") {
+                    showMenuBarExtra = false
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Theme.accent)
+                .font(.caption)
+                Spacer()
+                Text("Restore it in the app's settings")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
             }
         }
         .padding(12)

@@ -8,6 +8,9 @@ import SwiftUI
 /// which fights the static radio-row design. Hand layout is deterministic.
 struct SettingsPane: View {
     @Bindable var model: AppModel
+    /// Shared with the app scene's MenuBarExtra(isInserted:) and the pane's
+    /// remove button.
+    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
 
     var body: some View {
         ScrollView {
@@ -17,6 +20,7 @@ struct SettingsPane: View {
                 card("Rendering") { renderingRows }
                 card("Export") { exportRows }
                 card("Macro preamble") { preambleRows }
+                card("Menu bar") { menuBarRows }
             }
             .padding(16)
         }
@@ -191,6 +195,20 @@ struct SettingsPane: View {
 
         Text("Applied to every equation and saved between launches, "
              + "for example \\newcommand{\\R}{\\mathbb{R}}.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
+    // MARK: Menu bar
+
+    @ViewBuilder
+    private var menuBarRows: some View {
+        Toggle("Show π in the menu bar", isOn: $showMenuBarExtra)
+            .toggleStyle(.switch)
+            .controlSize(.small)
+
+        Text("A compact equation editor available from any app, "
+             + "even with this window closed.")
             .font(.caption)
             .foregroundStyle(.secondary)
     }

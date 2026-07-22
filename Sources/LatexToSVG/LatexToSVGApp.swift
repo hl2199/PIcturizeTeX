@@ -7,6 +7,9 @@ struct LatexToSVGApp: App {
     /// The menu bar companion runs on its own instance, so it works with the
     /// main window closed and always renders in display mode.
     @State private var menuBarModel = AppModel(menuBarLite: true)
+    /// One persisted flag, shared with the settings toggle and the pane's
+    /// remove button via the same @AppStorage key.
+    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
 
     var body: some Scene {
         WindowGroup {
@@ -14,7 +17,7 @@ struct LatexToSVGApp: App {
         }
         .commands { commands }
 
-        MenuBarExtra {
+        MenuBarExtra(isInserted: $showMenuBarExtra) {
             MenuBarPane(model: menuBarModel)
         } label: {
             Text("π")
