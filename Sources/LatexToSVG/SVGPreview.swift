@@ -38,17 +38,17 @@ struct SVGPreview: NSViewRepresentable {
             return
         }
 
-        // The equation is shown at its exact export size. `margin: auto` inside
-        // a flex container centres it while it fits, and switches to scrollable
-        // top-left alignment once it is larger than the pane -- unlike plain
-        // centring, which would clip the edges of an oversized equation.
+        // The SVG fills the view exactly. The caller sizes this view to the
+        // equation's aspect ratio, so stretching to 100% scales the vector
+        // uniformly; overflow is hidden because a fraction of a pixel of
+        // rounding disagreement would otherwise summon scrollbars.
         let html = """
         <!DOCTYPE html><html><head><meta charset="utf-8"><style>
           html, body {
             margin: 0; width: 100%; height: 100%; background: transparent;
-            display: flex; overflow: auto;
+            overflow: hidden;
           }
-          svg { margin: auto; flex-shrink: 0; }
+          svg { display: block; width: 100%; height: 100%; }
         </style></head><body>\(svg)</body></html>
         """
         view.loadHTMLString(html, baseURL: nil)

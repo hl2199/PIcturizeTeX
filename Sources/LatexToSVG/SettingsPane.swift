@@ -109,9 +109,6 @@ struct SettingsPane: View {
             }
         } header: {
             Text("Export")
-        } footer: {
-            Text("A drag produces one file in this format. "
-                 + "Copy puts PDF, PNG and SVG on the clipboard at once.")
         }
     }
 

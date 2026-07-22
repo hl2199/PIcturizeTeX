@@ -48,8 +48,8 @@ struct ContentView: View {
                 // events: drag-out and the right-click Copy menu live here.
                 PreviewDragSource(model: model)
             }
+            .overlay(alignment: .bottom) { statusBar(zoom: displayZoom(in: geo.size)) }
         }
-        .overlay(alignment: .bottom) { statusBar }
         .overlay(alignment: .topTrailing) {
             if model.isRendering {
                 ProgressView()
@@ -59,16 +59,25 @@ struct ContentView: View {
         }
     }
 
-    private func paperSheet(available: CGSize) -> some View {
-        // Keep the sheet clear of the pane edges and the status bar.
+    /// How much the sheet is magnified on screen. The export always uses the
+    /// exact configured size; the display scales the vector up to fill the
+    /// desk (capped, so a tiny inline fragment does not become a poster) and
+    /// down to fit when the equation is larger than the pane.
+    private func displayZoom(in available: CGSize) -> Double {
+        guard model.pixelWidth > 0, model.pixelHeight > 0 else { return 1 }
         let maxWidth = max(available.width - 100, 160)
         let maxHeight = max(available.height - 150, 90)
+        return min(min(maxWidth / model.pixelWidth, maxHeight / model.pixelHeight), 4)
+    }
+
+    private func paperSheet(available: CGSize) -> some View {
+        let zoom = displayZoom(in: available)
 
         return Group {
             if model.renderedSVG != nil {
                 SVGPreview(svg: model.renderedSVG)
-                    .frame(width: min(max(model.pixelWidth, 40), maxWidth),
-                           height: min(max(model.pixelHeight, 24), maxHeight))
+                    .frame(width: model.pixelWidth * zoom,
+                           height: model.pixelHeight * zoom)
             } else {
                 Text("Type an equation below")
                     .font(.system(.title3, design: .serif))
@@ -88,7 +97,7 @@ struct ContentView: View {
         .animation(.spring(duration: 0.25), value: model.pixelHeight)
     }
 
-    private var statusBar: some View {
+    private func statusBar(zoom: Double) -> some View {
         VStack(spacing: 8) {
             if let error = model.errorMessage {
                 HStack(spacing: 6) {
@@ -108,7 +117,8 @@ struct ContentView: View {
             HStack(spacing: 12) {
                 if model.pixelWidth > 0 {
                     Text("\(SVGDocument.format(model.pixelWidth)) × "
-                         + "\(SVGDocument.format(model.pixelHeight)) px")
+                         + "\(SVGDocument.format(model.pixelHeight)) px"
+                         + (abs(zoom - 1) > 0.01 ? "  ·  shown at \(Int((zoom * 100).rounded()))%" : ""))
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
                 }
