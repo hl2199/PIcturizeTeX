@@ -123,6 +123,19 @@ public final class RenderEngine: NSObject {
         return RenderResult(svg: svg, widthEx: payload.widthEx, heightEx: payload.heightEx)
     }
 
+    /// Measures one `ex` in the given CSS font, e.g. `20px Lato`.
+    ///
+    /// Returns `nil` when the font string is not valid CSS, so the caller can
+    /// keep using the last good factor instead of collapsing the equation while
+    /// the user is still typing the font name.
+    public func pixelsPerEx(cssFont: String) async throws -> Double? {
+        try await start()
+        let literal = try jsonStringLiteral(cssFont)
+        let raw = try? await webView.evaluateJavaScript("window.measurePixelsPerEx(\(literal))")
+        guard let value = raw as? Double, value > 0 else { return nil }
+        return value
+    }
+
     /// Encodes a Swift string as a JavaScript string literal, including quotes.
     private func jsonStringLiteral(_ value: String) throws -> String {
         let data = try JSONEncoder().encode(value)
