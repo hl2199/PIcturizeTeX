@@ -43,7 +43,10 @@ struct ContentView: View {
             capture(host.contentView, to: path)
         } else {
             try? await Task.sleep(for: .seconds(3))
-            capture(NSApp.windows.first(where: { $0.isVisible })?.contentView, to: path)
+            // The superview (theme frame) includes the title bar and toolbar,
+            // which the content view alone does not.
+            let window = NSApp.windows.first(where: { $0.isVisible })
+            capture(window?.contentView?.superview ?? window?.contentView, to: path)
         }
     }
 
@@ -214,12 +217,14 @@ struct ContentView: View {
     @ToolbarContentBuilder
     private var toolbar: some ToolbarContent {
         ToolbarItem(placement: .navigation) {
-            Button {
-                model.showHistory.toggle()
-            } label: {
-                Image(systemName: "sidebar.left")
+            // A labelled toggle rather than a bare sidebar glyph: it names
+            // what it shows, and its pressed state mirrors the pane.
+            Toggle(isOn: $model.showHistory) {
+                Label("History", systemImage: "clock.arrow.circlepath")
+                    .labelStyle(.titleAndIcon)
             }
-            .help("Show or hide history")
+            .toggleStyle(.button)
+            .help("Show or hide the history of exported equations")
         }
     }
 }
