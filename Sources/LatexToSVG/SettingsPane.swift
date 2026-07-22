@@ -109,9 +109,14 @@ struct SettingsPane: View {
 
     private var renderingSection: some View {
         Section("Rendering") {
-            Toggle("Display mode", isOn: $model.displayMode)
-            Text("Display mode centres the equation and sets larger operators, "
-                 + "as \\[ … \\] does in a document.")
+            Picker("", selection: $model.displayMode) {
+                Text("Display").tag(true)
+                Text("Inline").tag(false)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            Text("Display uses standalone-equation proportions, as \\[ … \\] does; "
+                 + "inline uses the compact style of math inside a sentence, as $ … $ does.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
