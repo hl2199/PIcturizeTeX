@@ -1,10 +1,8 @@
 # PIcturizeTeX
 
-A native Mac app that turns LaTeX equations into pictures — SVG, PDF, and PNG. For use in your figures, presentations, and whatever else you may need it for. Live preview, easy drag and drop, quick menu bar access, customizable color and size.
+A native Mac app that turns LaTeX equations into pictures — SVG, PDF, and PNG. For use in your figures, presentations, and whatever else you may need it for. Live preview, easy drag and drop, quick menu bar access, customizable color and size. Inspired by `https://viereck.ch/latex-to-svg/`, but I wanted to make it local. Also has quick menu bar option for generation on the go!
 
 <img width="800" height="528" alt="Screenshot 2026-07-22 at 5 10 58 PM" src="https://github.com/user-attachments/assets/a090e9f4-8d2c-4fed-9fa5-f228fd6a62d7" />
-
-Also has a menu bar option that can be toggled on and off, for quick on-the-go generation with all the core features:
 
 <img width="779" height="542" alt="Screenshot 2026-07-22 at 5 47 56 PM" src="https://github.com/user-attachments/assets/79129ee4-d4e8-445b-a13d-7240fa91565d" />
 
