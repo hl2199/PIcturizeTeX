@@ -35,27 +35,6 @@ Release zip: `./Scripts/release.sh <version>`.
 
 Requires only the Xcode Command Line Tools (no Xcode).
 
-## What it does
-
-- **Live preview** as you type, shown at the equation's true export size; errors are
-  reported without blanking the last good render.
-- **Right-click the preview to Copy** (or ⇧⌘C): PDF + PNG + SVG go on the clipboard as
-  one item — Keynote takes the PDF, Figma the SVG, Slack the PNG.
-- **Drag the equation out** into any app or Finder to drop a file (format
-  configurable, default PDF).
-- **Save** as SVG (⌘S), PDF (⌘D), or PNG (⌘E); remembers the last folder.
-- **Color**: black / white / custom, chosen with a native color well (CSS text as a
-  secondary input). The preview background darkens automatically for light colors.
-- **Scaling**: default (1 ex = 8 px), match a CSS font, or manual px-per-ex.
-- **Display mode** toggle; transparent-background PNG at 96–600 dpi.
-- **History**: equations you've exported, shown as rendered thumbnails, restorable
-  with their settings. Toggled from the toolbar; open/closed state persists across
-  launches.
-- **Macro preamble**: a persistent `\newcommand` block applied to every render.
-- **Menu bar companion** (the π in your menu bar): a compact editor with live
-  preview, color and scale pickers, drag-out, right-click copy, and save — always
-  in display mode, and fully functional with the main window closed.
-
 ## Layout
 
 | Path | Role |
