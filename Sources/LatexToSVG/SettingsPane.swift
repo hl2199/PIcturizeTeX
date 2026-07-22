@@ -21,32 +21,33 @@ struct SettingsPane: View {
 
     // MARK: Colour
 
-    /// Every option owns one permanent row with its controls inline, so
-    /// selecting an option never adds or removes rows -- the layout is static.
     private var colorSection: some View {
         Section("Color") {
-            radioRow("Black", selected: model.colorChoice == .black) {
-                model.colorChoice = .black
-            } trailing: {
-                EmptyView()
+            Picker("", selection: $model.colorChoice) {
+                ForEach(ColorChoice.allCases) { Text($0.label).tag($0) }
             }
+            .pickerStyle(.radioGroup)
+            .labelsHidden()
 
-            radioRow("White", selected: model.colorChoice == .white) {
-                model.colorChoice = .white
-            } trailing: {
-                EmptyView()
-            }
-
-            radioRow("Custom", selected: model.colorChoice == .custom) {
-                model.colorChoice = .custom
-            } trailing: {
-                // The system colour panel carries its own hex entry, so the
-                // well is the only control needed here.
-                ColorPicker("", selection: Binding(
+            if model.colorChoice == .custom {
+                // The colour well is the primary control; the CSS field is the
+                // escape hatch for named colours and exact values.
+                ColorPicker("Color", selection: Binding(
                     get: { Color(nsColor: NSColor(css: model.customColorText) ?? .labelColor) },
                     set: { model.customColorText = $0.cssHexString }
                 ))
-                .labelsHidden()
+
+                HStack(spacing: 6) {
+                    Text("CSS")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("#0066cc", text: $model.customColorText)
+                        .textFieldStyle(.roundedBorder)
+                        .font(.caption.monospaced())
+                }
+                Text("Any CSS colour works here, for example rebeccapurple.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
         }
     }
@@ -54,82 +55,47 @@ struct SettingsPane: View {
     // MARK: Scale
 
     private var scaleSection: some View {
-        Section("Scale") {
-            radioRow("Default (1 ex = 8 px)", selected: model.scaleChoice == .standard) {
-                model.scaleChoice = .standard
-            } trailing: {
-                EmptyView()
+        Section("Scaling") {
+            Picker("", selection: $model.scaleChoice) {
+                ForEach(ScaleChoice.allCases) { Text($0.label).tag($0) }
             }
+            .pickerStyle(.radioGroup)
+            .labelsHidden()
 
-            radioRow("Match a font", selected: model.scaleChoice == .matchFont) {
-                model.scaleChoice = .matchFont
-            } detail: {
-                Picker("", selection: $model.fontFamily) {
+            switch model.scaleChoice {
+            case .standard:
+                Text("1 ex = 8 px.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+
+            case .matchFont:
+                Picker("Font", selection: $model.fontFamily) {
                     ForEach(NSFontManager.shared.availableFontFamilies, id: \.self) { family in
                         Text(family).tag(family)
                     }
                 }
-                .labelsHidden()
-                .frame(maxWidth: 170)
 
-                TextField("", value: $model.fontSize, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 44)
-                Text("px")
-                    .foregroundStyle(.secondary)
-            }
-
-            radioRow("Manual", selected: model.scaleChoice == .manual) {
-                model.scaleChoice = .manual
-            } detail: {
-                Text("1 ex =")
-                    .foregroundStyle(.secondary)
-                TextField("", value: $model.manualPixelsPerEx, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 44)
-                Text("px")
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-
-    /// A radio option whose controls are always visible, so selecting never
-    /// reshapes the form. A compact control sits inline at the trailing edge;
-    /// anything wider goes on a `detail` line beneath the title, indented to a
-    /// shared left edge so the columns align. Controls respond only while
-    /// their option is the selected one.
-    private func radioRow<Trailing: View, Detail: View>(
-        _ title: String,
-        selected: Bool,
-        select: @escaping () -> Void,
-        @ViewBuilder trailing: () -> Trailing = { EmptyView() },
-        @ViewBuilder detail: () -> Detail = { EmptyView() }
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 8) {
-                Button(action: select) {
-                    HStack(spacing: 6) {
-                        Image(systemName: selected ? "inset.filled.circle" : "circle")
-                            .foregroundStyle(selected ? Theme.accent : Color.secondary)
-                        Text(title)
-                    }
-                    .contentShape(Rectangle())
+                HStack(spacing: 6) {
+                    Text("Size")
+                    TextField("", value: $model.fontSize, format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 60)
+                    Text("px")
                 }
-                .buttonStyle(.plain)
 
-                Spacer(minLength: 0)
+                Text("The equation is scaled so its x-height matches this font.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
 
-                trailing()
-                    .disabled(!selected)
+            case .manual:
+                HStack(spacing: 6) {
+                    Text("1 ex =")
+                    TextField("", value: $model.manualPixelsPerEx, format: .number)
+                        .textFieldStyle(.roundedBorder)
+                        .frame(width: 60)
+                    Text("px")
+                }
             }
-
-            HStack(spacing: 6) {
-                detail()
-                    .disabled(!selected)
-            }
-            .padding(.leading, 22)
         }
     }
 
