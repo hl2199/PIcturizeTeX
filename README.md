@@ -1,21 +1,22 @@
-# LaTeX to SVG (macOS)
+# PIcturizeTeX
 
-A native Mac app that renders LaTeX equations to vector graphics — every feature of
-[viereck.ch/latex-to-svg](https://viereck.ch/latex-to-svg/), plus the things a web page
-can't do. Equations are rendered by a bundled MathJax 4, entirely offline.
+A native Mac app that turns LaTeX equations into pictures — SVG, PDF, and PNG — with
+every feature of [viereck.ch/latex-to-svg](https://viereck.ch/latex-to-svg/), plus the
+things a web page can't do. Equations are rendered by a bundled MathJax 4, entirely
+offline.
 
 ## Build and run
 
 Requires only the Xcode Command Line Tools (no Xcode):
 
 ```sh
-./Scripts/bundle.sh            # builds and assembles build/LatexToSVG.app
-open build/LatexToSVG.app
+./Scripts/bundle.sh            # builds and assembles build/PIcturizeTeX.app
+open build/PIcturizeTeX.app
 ```
 
 Release build: `./Scripts/bundle.sh release`. Tests: `swift test`.
 
-To install, copy `build/LatexToSVG.app` to `/Applications`. The bundle is ad-hoc
+To install, copy `build/PIcturizeTeX.app` to `/Applications`. The bundle is ad-hoc
 signed — fine locally; distributing to others would need a Developer ID and
 notarization.
 
@@ -46,7 +47,7 @@ notarization.
 | `Sources/LatexToSVG` | The SwiftUI app. |
 | `Scripts/bundle.sh` | Assembles the `.app` from SwiftPM output (SwiftPM alone emits a bare executable, and WebKit requires a signed bundle). |
 
-Data lives in `~/Library/Application Support/LatexToSVG/` (`history.json`,
+Data lives in `~/Library/Application Support/PIcturizeTeX/` (`history.json`,
 `preamble.tex`) — both plain text.
 
 ## Updating MathJax
