@@ -3,6 +3,7 @@ import SwiftUI
 
 struct ContentView: View {
     @Bindable var model: AppModel
+    @State private var handleHovered = false
 
     var body: some View {
         HStack(spacing: 0) {
@@ -11,16 +12,38 @@ struct ContentView: View {
                 Divider()
             }
 
+            historyHandle
             centre
 
             Divider()
             SettingsPane(model: model)
         }
         .frame(minWidth: 840, minHeight: 560)
-        .toolbar { toolbar }
         .tint(Theme.accent)
         .task { model.renderNow() }
         .task { await Self.runUIProbeIfRequested() }
+    }
+
+    /// The history panel's handle: a slim strip on the seam where the panel
+    /// appears, its chevron pointing the way the seam will move. Lives at the
+    /// place it affects, so it needs no label.
+    private var historyHandle: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.18)) {
+                model.showHistory.toggle()
+            }
+        } label: {
+            Image(systemName: model.showHistory ? "chevron.compact.left" : "chevron.compact.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(handleHovered ? Color.primary : Color.secondary)
+                .frame(width: 15)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .background(handleHovered ? Color.primary.opacity(0.06) : .clear)
+        }
+        .buttonStyle(.plain)
+        .onHover { handleHovered = $0 }
+        .help(model.showHistory ? "Hide recent equations" : "Show recent equations")
     }
 
     /// Development aid: with UIPROBE_PNG=<path> in the environment, the app
@@ -212,19 +235,4 @@ struct ContentView: View {
         .background(Color(nsColor: .textBackgroundColor))
     }
 
-    // MARK: Toolbar
-
-    @ToolbarContentBuilder
-    private var toolbar: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            // A labelled toggle rather than a bare sidebar glyph: it names
-            // what it shows, and its pressed state mirrors the pane.
-            Toggle(isOn: $model.showHistory) {
-                Label("History", systemImage: "clock.arrow.circlepath")
-                    .labelStyle(.titleAndIcon)
-            }
-            .toggleStyle(.button)
-            .help("Show or hide the history of exported equations")
-        }
-    }
 }
