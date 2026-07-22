@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<script>
+  window.MathJax = {
+    tex: { packages: { '[+]': ['ams', 'newcommand', 'configmacros', 'action', 'bbox',
+                               'boldsymbol', 'braket', 'cancel', 'color', 'enclose',
+                               'extpfeil', 'html', 'mhchem', 'physics', 'unicode',
+                               'verb'] } },
+    // 'none' inlines every glyph path instead of emitting <use> references into a
+    // shared <defs>. Larger output, but each SVG is standalone and free of element
+    // ids that could collide when several equations are inlined in one document, or
+    // that some vector editors resolve poorly. Interop beats bytes here.
+    svg: { fontCache: 'none' },
+    startup: { typeset: false }
+  };
+</script>
+<script src="mathjax/tex-svg.js" id="MathJax-script"></script>
+</head>
+<body>
+<script>
+// The entire JavaScript surface of this application is the function below.
+// Everything else -- scaling, colouring, export -- happens in Swift.
+//
+// Returns a JSON string: { svg, widthEx, heightEx, error, kind }
+// `error` is null on success. On failure `svg` is null and `error` holds the
+// message, with `kind` distinguishing a bad equation ("tex") from a fault in the
+// engine itself ("engine") -- only the former is a normal, recoverable event.
+//
+// The arguments arrive as ordinary JavaScript strings: Swift interpolates them
+// into this call as JSON string literals, so they are already decoded by the
+// time the function runs. Parsing them again here would be wrong.
+window.renderEquation = function (latex, preamble, displayMode) {
+  try {
+    // Macros defined in the preamble must be in scope for the equation, so they
+    // are concatenated into a single source string. A \newcommand emits no visible
+    // output, so this does not disturb the rendered result.
+    var source = preamble.trim().length > 0 ? preamble + "\n" + latex : latex;
+
+    var node = MathJax.tex2svg(source, { display: displayMode });
+    var svg = node.querySelector("svg");
+    if (!svg) {
+      return JSON.stringify({ svg: null, widthEx: 0, heightEx: 0,
+                              error: "MathJax produced no SVG output.", kind: "engine" });
+    }
+
+    // MathJax reports TeX errors as an <merror>-derived node carrying the message
+    // in data-mjx-error, rather than by throwing.
+    var errNode = node.querySelector("[data-mjx-error]");
+    if (errNode) {
+      return JSON.stringify({ svg: null, widthEx: 0, heightEx: 0,
+                              error: errNode.getAttribute("data-mjx-error"), kind: "tex" });
+    }
+
+    // MathJax sizes its output in ex units. Swift converts to px, because that
+    // conversion is real logic and belongs where it can be unit tested.
+    var parseEx = function (v) {
+      if (!v) return 0;
+      var m = /^([0-9.eE+-]+)ex$/.exec(v.trim());
+      return m ? parseFloat(m[1]) : 0;
+    };
+
+    return JSON.stringify({
+      svg: svg.outerHTML,
+      widthEx: parseEx(svg.getAttribute("width")),
+      heightEx: parseEx(svg.getAttribute("height")),
+      error: null,
+      kind: null
+    });
+  } catch (e) {
+    return JSON.stringify({ svg: null, widthEx: 0, heightEx: 0,
+                            error: String(e && e.message ? e.message : e), kind: "engine" });
+  }
+};
+
+// Set once MathJax has finished loading its font data, so Swift knows when the
+// engine is ready to accept render calls.
+window.mathJaxReady = false;
+MathJax.startup.promise.then(function () { window.mathJaxReady = true; });
+</script>
+</body>
+</html>
