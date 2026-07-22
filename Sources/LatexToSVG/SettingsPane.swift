@@ -88,8 +88,13 @@ struct SettingsPane: View {
         } header: {
             Text("Rendering")
         } footer: {
-            Text("Display uses standalone-equation proportions, as \\[ … \\] does; "
-                 + "inline uses the compact style of math inside a sentence, as $ … $ does.")
+            if model.displayMode {
+                Text("Standalone-equation proportions, as \\[ … \\] gives in a document: "
+                     + "full-size fractions, limits above and below big operators.")
+            } else {
+                Text("The compact style of math inside a sentence, as $ … $ gives: "
+                     + "smaller fractions, limits beside big operators.")
+            }
         }
     }
 
