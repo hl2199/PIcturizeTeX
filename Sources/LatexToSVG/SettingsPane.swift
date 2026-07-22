@@ -2,117 +2,225 @@ import AppKit
 import LatexCore
 import SwiftUI
 
-/// The right-hand pane, set as a native grouped form: quiet, dense, and
-/// unmistakably macOS.
+/// The right-hand pane. Laid out by hand as grouped-style cards rather than a
+/// SwiftUI `Form`: the grouped form imposes its own row structure -- labels
+/// synthesised from placeholders, controls re-aligned to the trailing edge --
+/// which fights the static radio-row design. Hand layout is deterministic.
 struct SettingsPane: View {
     @Bindable var model: AppModel
 
     var body: some View {
-        Form {
-            colorSection
-            scaleSection
-            renderingSection
-            exportSection
-            preambleSection
+        ScrollView {
+            VStack(alignment: .leading, spacing: 18) {
+                card("Color") { colorRows }
+                card("Scale") { scaleRows }
+                card("Rendering") { renderingRows }
+                card("Export") { exportRows }
+                card("Macro preamble") { preambleRows }
+            }
+            .padding(16)
         }
-        .formStyle(.grouped)
         .frame(width: 330)
+        .background(Color(nsColor: .windowBackgroundColor))
     }
 
     // MARK: Colour
 
-    /// Every option owns one permanent row with its controls inline, so
-    /// selecting an option never adds or removes rows -- the layout is static.
-    private var colorSection: some View {
-        Section("Color") {
-            radioRow("Black", selected: model.colorChoice == .black) {
-                model.colorChoice = .black
-            } trailing: {
-                EmptyView()
-            }
+    @ViewBuilder
+    private var colorRows: some View {
+        radioRow("Black", selected: model.colorChoice == .black) {
+            model.colorChoice = .black
+        }
 
-            radioRow("White", selected: model.colorChoice == .white) {
-                model.colorChoice = .white
-            } trailing: {
-                EmptyView()
-            }
+        radioRow("White", selected: model.colorChoice == .white) {
+            model.colorChoice = .white
+        }
 
-            radioRow("Custom", selected: model.colorChoice == .custom) {
-                model.colorChoice = .custom
-            } trailing: {
-                // The system colour panel carries its own hex entry, so the
-                // well is the only control needed here. Picking a colour also
-                // selects Custom, so the well is never dead to a click.
-                ColorPicker("", selection: Binding(
-                    get: { Color(nsColor: NSColor(css: model.customColorText) ?? .labelColor) },
-                    set: {
-                        model.customColorText = $0.cssHexString
-                        model.colorChoice = .custom
-                    }
-                ))
-                .labelsHidden()
-            }
+        radioRow("Custom", selected: model.colorChoice == .custom) {
+            model.colorChoice = .custom
+        } trailing: {
+            // The system colour panel carries its own hex entry too. Picking a
+            // colour or editing the field selects Custom, so neither control
+            // is ever dead to a click.
+            ColorPicker("", selection: Binding(
+                get: { Color(nsColor: NSColor(css: model.customColorText) ?? .labelColor) },
+                set: {
+                    model.customColorText = $0.cssHexString
+                    model.colorChoice = .custom
+                }
+            ))
+            .labelsHidden()
+        } detail: {
+            TextField("", text: Binding(
+                get: { model.customColorText },
+                set: { model.customColorText = $0; model.colorChoice = .custom }
+            ), prompt: Text("#0066cc"))
+            .textFieldStyle(.roundedBorder)
+            .font(.body.monospaced())
+            .frame(width: 120)
         }
     }
 
     // MARK: Scale
 
-    private var scaleSection: some View {
-        Section("Scale") {
-            radioRow("Default (1 ex = 8 px)", selected: model.scaleChoice == .standard) {
-                model.scaleChoice = .standard
-            } trailing: {
-                EmptyView()
-            }
+    @ViewBuilder
+    private var scaleRows: some View {
+        radioRow("Default (1 ex = 8 px)", selected: model.scaleChoice == .standard) {
+            model.scaleChoice = .standard
+        }
 
-            radioRow("Match a font", selected: model.scaleChoice == .matchFont) {
-                model.scaleChoice = .matchFont
-            } detail: {
-                Picker("", selection: Binding(
-                    get: { model.fontFamily },
-                    set: { model.fontFamily = $0; model.scaleChoice = .matchFont }
-                )) {
-                    ForEach(NSFontManager.shared.availableFontFamilies, id: \.self) { family in
-                        Text(family).tag(family)
-                    }
+        radioRow("Match a font", selected: model.scaleChoice == .matchFont) {
+            model.scaleChoice = .matchFont
+        } detail: {
+            Picker("", selection: Binding(
+                get: { model.fontFamily },
+                set: { model.fontFamily = $0; model.scaleChoice = .matchFont }
+            )) {
+                ForEach(NSFontManager.shared.availableFontFamilies, id: \.self) { family in
+                    Text(family).tag(family)
                 }
-                .labelsHidden()
-                .frame(maxWidth: 170)
-
-                TextField("", value: Binding(
-                    get: { model.fontSize },
-                    set: { model.fontSize = $0; model.scaleChoice = .matchFont }
-                ), format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 44)
-                Text("px")
-                    .foregroundStyle(.secondary)
             }
+            .labelsHidden()
+            // A fixed width: .fixedSize() would size the popup to its widest
+            // menu item, and font family names run long.
+            .frame(width: 150)
 
-            radioRow("Manual", selected: model.scaleChoice == .manual) {
-                model.scaleChoice = .manual
-            } detail: {
-                Text("1 ex =")
-                    .foregroundStyle(.secondary)
-                TextField("", value: Binding(
-                    get: { model.manualPixelsPerEx },
-                    set: { model.manualPixelsPerEx = $0; model.scaleChoice = .manual }
-                ), format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .multilineTextAlignment(.trailing)
-                    .frame(width: 44)
-                Text("px")
-                    .foregroundStyle(.secondary)
+            TextField("", value: Binding(
+                get: { model.fontSize },
+                set: { model.fontSize = $0; model.scaleChoice = .matchFont }
+            ), format: .number)
+            .textFieldStyle(.roundedBorder)
+            .multilineTextAlignment(.trailing)
+            .frame(width: 44)
+
+            Text("px")
+                .foregroundStyle(.secondary)
+        }
+
+        radioRow("Manual", selected: model.scaleChoice == .manual) {
+            model.scaleChoice = .manual
+        } detail: {
+            Text("1 ex =")
+                .foregroundStyle(.secondary)
+
+            TextField("", value: Binding(
+                get: { model.manualPixelsPerEx },
+                set: { model.manualPixelsPerEx = $0; model.scaleChoice = .manual }
+            ), format: .number)
+            .textFieldStyle(.roundedBorder)
+            .multilineTextAlignment(.trailing)
+            .frame(width: 44)
+
+            Text("px")
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: Rendering
+
+    @ViewBuilder
+    private var renderingRows: some View {
+        Picker("", selection: $model.displayMode) {
+            Text("Display").tag(true)
+            Text("Inline").tag(false)
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+
+        // A fixed height keeps the cards below from shifting when the caption
+        // swaps between the two descriptions.
+        Group {
+            if model.displayMode {
+                Text("Standalone-equation proportions, as \\[ … \\] gives: "
+                     + "full-size fractions, limits above big operators.")
+            } else {
+                Text("In-sentence proportions, as $ … $ gives: "
+                     + "compact fractions, limits beside big operators.")
+            }
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .frame(maxWidth: .infinity, minHeight: 30, alignment: .topLeading)
+    }
+
+    // MARK: Export
+
+    @ViewBuilder
+    private var exportRows: some View {
+        labeledPopup("PNG resolution") {
+            Picker("", selection: $model.pngDPI) {
+                Text("96 dpi").tag(96.0)
+                Text("192 dpi").tag(192.0)
+                Text("300 dpi").tag(300.0)
+                Text("600 dpi").tag(600.0)
+            }
+        }
+
+        labeledPopup("Drag format") {
+            Picker("", selection: $model.dragFormat) {
+                ForEach(ExportFormat.allCases, id: \.self) { Text($0.displayName).tag($0) }
             }
         }
     }
 
+    // MARK: Preamble
+
+    @ViewBuilder
+    private var preambleRows: some View {
+        TextEditor(text: $model.preamble)
+            .font(.system(.caption, design: .monospaced))
+            .frame(height: 88)
+            .scrollContentBackground(.hidden)
+            .padding(4)
+            .background(RoundedRectangle(cornerRadius: 6)
+                .fill(Color(nsColor: .textBackgroundColor)))
+            .overlay(RoundedRectangle(cornerRadius: 6)
+                .stroke(Color.secondary.opacity(0.25)))
+
+        Text("Applied to every equation and saved between launches, "
+             + "for example \\newcommand{\\R}{\\mathbb{R}}.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+    }
+
+    // MARK: - Layout primitives
+
+    /// A grouped-style section: small header, rounded card, quiet background.
+    private func card<Content: View>(_ title: String,
+                                     @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 2)
+
+            VStack(alignment: .leading, spacing: 12) {
+                content()
+            }
+            .padding(12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(RoundedRectangle(cornerRadius: 8)
+                .fill(Color(nsColor: .quaternarySystemFill)))
+        }
+    }
+
+    /// Label at the leading edge, pop-up hugging the trailing edge.
+    private func labeledPopup<P: View>(_ label: String,
+                                       @ViewBuilder popup: () -> P) -> some View {
+        HStack {
+            Text(label)
+            Spacer()
+            popup()
+                .labelsHidden()
+                .fixedSize()
+        }
+    }
+
     /// A radio option whose controls are always visible, so selecting never
-    /// reshapes the form. A compact control sits inline at the trailing edge;
-    /// anything wider goes on a `detail` line beneath the title, indented to a
-    /// shared left edge so the columns align. Controls respond only while
-    /// their option is the selected one.
+    /// reshapes the card. A compact control sits inline at the trailing edge;
+    /// anything wider goes on a `detail` line beneath the title, indented to
+    /// the title's left edge. Controls stay live -- using one selects its own
+    /// option -- and inactive rows are dimmed, never disabled.
     private func radioRow<Trailing: View, Detail: View>(
         _ title: String,
         selected: Bool,
@@ -135,80 +243,15 @@ struct SettingsPane: View {
 
                 Spacer(minLength: 0)
 
-                // Controls stay live: using one selects its own option, so a
-                // click is never dead. Dimming still marks the inactive rows.
                 trailing()
                     .opacity(selected ? 1 : 0.55)
             }
 
-            HStack(alignment: .firstTextBaseline, spacing: 6) {
+            HStack(spacing: 6) {
                 detail()
                     .opacity(selected ? 1 : 0.55)
             }
             .padding(.leading, 20)
-        }
-    }
-
-    // MARK: Rendering
-
-    private var renderingSection: some View {
-        Section {
-            Picker("Style", selection: $model.displayMode) {
-                Text("Display").tag(true)
-                Text("Inline").tag(false)
-            }
-            .pickerStyle(.segmented)
-            .labelsHidden()
-        } header: {
-            Text("Rendering")
-        } footer: {
-            // A fixed height keeps the sections below from shifting when the
-            // caption swaps between the two descriptions.
-            Group {
-                if model.displayMode {
-                    Text("Standalone-equation proportions, as \\[ … \\] gives: "
-                         + "full-size fractions, limits above big operators.")
-                } else {
-                    Text("In-sentence proportions, as $ … $ gives: "
-                         + "compact fractions, limits beside big operators.")
-                }
-            }
-            .frame(maxWidth: .infinity, minHeight: 32, alignment: .topLeading)
-        }
-    }
-
-    // MARK: Export
-
-    private var exportSection: some View {
-        Section {
-            Picker("PNG resolution", selection: $model.pngDPI) {
-                Text("96 dpi").tag(96.0)
-                Text("192 dpi").tag(192.0)
-                Text("300 dpi").tag(300.0)
-                Text("600 dpi").tag(600.0)
-            }
-
-            Picker("Drag format", selection: $model.dragFormat) {
-                ForEach(ExportFormat.allCases, id: \.self) { Text($0.displayName).tag($0) }
-            }
-        } header: {
-            Text("Export")
-        }
-    }
-
-    // MARK: Preamble
-
-    private var preambleSection: some View {
-        Section {
-            TextEditor(text: $model.preamble)
-                .font(.system(.caption, design: .monospaced))
-                .frame(height: 88)
-                .scrollContentBackground(.hidden)
-        } header: {
-            Text("Macro preamble")
-        } footer: {
-            Text("Applied to every equation and saved between launches, "
-                 + "for example \\newcommand{\\R}{\\mathbb{R}}.")
         }
     }
 }

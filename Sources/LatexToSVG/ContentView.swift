@@ -20,6 +20,28 @@ struct ContentView: View {
         .toolbar { toolbar }
         .tint(Theme.accent)
         .task { model.renderNow() }
+        .task { await Self.runUIProbeIfRequested() }
+    }
+
+    /// Development aid: with UIPROBE_PNG=<path> in the environment, the app
+    /// snapshots its own window to that path and exits. Renders via
+    /// cacheDisplay, so it works across Spaces and without screen-recording
+    /// permission. Inert in normal use.
+    @MainActor
+    private static func runUIProbeIfRequested() async {
+        guard let path = ProcessInfo.processInfo.environment["UIPROBE_PNG"] else { return }
+        try? await Task.sleep(for: .seconds(3))
+        guard let window = NSApp.windows.first(where: { $0.isVisible }),
+              let view = window.contentView,
+              let rep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
+            print("UIPROBE: no window to capture")
+            exit(1)
+        }
+        view.cacheDisplay(in: view.bounds, to: rep)
+        try? rep.representation(using: .png, properties: [:])?
+            .write(to: URL(fileURLWithPath: path))
+        print("UIPROBE: wrote \(path)")
+        exit(0)
     }
 
     // MARK: Centre column
