@@ -19,8 +19,13 @@ public final class Exporter {
 
     private var webView: WKWebView?
     /// WebKit only builds a layer tree for a view that belongs to a window, so
-    /// the export view is hosted in a real window parked far offscreen. Without
-    /// it `createPDF` returns a page containing only the background.
+    /// the export view is hosted in a real window. Without one, `pdf(...)`
+    /// returns a page containing only the background.
+    ///
+    /// The window must exist but must NEVER be ordered on screen: an ordered
+    /// window -- even parked at -30000, -30000 -- can be pulled back onto the
+    /// visible display by macOS window management, appearing as a mysterious
+    /// borderless equation floating over the desktop.
     private var hostWindow: NSWindow?
 
     public init() {}
@@ -121,8 +126,8 @@ public final class Exporter {
         // Keeps the exported page transparent rather than opaque white.
         created.setValue(false, forKey: "drawsBackground")
 
-        // Parked far offscreen so it can never appear on any display, while
-        // still being a genuine window as far as WebKit is concerned.
+        // A genuine window as far as WebKit is concerned, but never ordered
+        // on screen -- see hostWindow above.
         let window = NSWindow(contentRect: CGRect(x: -30000, y: -30000,
                                                   width: width, height: height),
                               styleMask: [.borderless],
@@ -132,7 +137,6 @@ public final class Exporter {
         window.backgroundColor = .clear
         window.isOpaque = false
         window.contentView = created
-        window.orderFrontRegardless()
 
         hostWindow = window
         webView = created

@@ -19,5 +19,8 @@ let package = Package(
         .executableTarget(name: "LatexToSVG", dependencies: ["LatexCore", "LatexRender"]),
 
         .testTarget(name: "LatexCoreTests", dependencies: ["LatexCore"]),
+
+        // Diagnostic harness for the exporter's window hosting; not shipped.
+        .executableTarget(name: "ExportProbe", dependencies: ["LatexCore", "LatexRender"]),
     ]
 )
