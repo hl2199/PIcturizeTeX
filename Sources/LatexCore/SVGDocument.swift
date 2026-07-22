@@ -133,7 +133,7 @@ public enum SVGDocument {
     }
 
     /// Trims trailing zeros so dimensions read `99.6px` rather than `99.600000px`.
-    static func format(_ value: Double) -> String {
+    public static func format(_ value: Double) -> String {
         guard value.isFinite else { return "0" }
         let rounded = (value * 1000).rounded() / 1000
         if rounded == rounded.rounded() && abs(rounded) < 1e15 {
