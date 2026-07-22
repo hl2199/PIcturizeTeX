@@ -43,6 +43,14 @@ struct HistoryStoreTests {
         #expect(reloaded.entries.first?.settings == settings)
     }
 
+    @Test("the rendered SVG is stored for thumbnails and survives reload")
+    func storesSVG() throws {
+        let dir = try TempDirectory()
+        HistoryStore(fileURL: dir.file("history.json"))
+            .record(latex: "x", settings: RenderSettings(), svg: "<svg>x</svg>")
+        #expect(HistoryStore(fileURL: dir.file("history.json")).entries.first?.svg == "<svg>x</svg>")
+    }
+
     @Test("a repeated source is deduplicated and promoted")
     func deduplicates() throws {
         // Re-exporting while tuning colour or scale should not accumulate near

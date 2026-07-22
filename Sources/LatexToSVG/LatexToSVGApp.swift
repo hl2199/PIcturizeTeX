@@ -34,17 +34,6 @@ struct LatexToSVGApp: App {
             }
             .keyboardShortcut("c", modifiers: [.command, .shift])
             .disabled(model.renderedSVG == nil)
-
-            Button("Copy SVG Source", action: model.copySVGSource)
-                .keyboardShortcut("c", modifiers: [.command, .option])
-                .disabled(model.renderedSVG == nil)
-        }
-
-        CommandGroup(after: .sidebar) {
-            Toggle("Show History", isOn: $model.showHistory)
-                .keyboardShortcut("h", modifiers: [.command, .shift])
-            Toggle("Show SVG Source", isOn: $model.showSource)
-                .keyboardShortcut("u", modifiers: .command)
         }
     }
 

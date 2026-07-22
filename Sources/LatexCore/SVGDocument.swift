@@ -34,15 +34,13 @@ public enum SVGDocument {
         tag = setAttribute(tag, name: "width", value: format(widthPx) + "px")
         tag = setAttribute(tag, name: "height", value: format(heightPx) + "px")
 
-        if let css = color.cssColor {
-            let existing = attributeValue(tag, name: "style") ?? ""
-            // Appending rather than replacing preserves MathJax's vertical-align,
-            // which callers embedding the SVG inline still rely on.
-            var merged = existing.trimmingCharacters(in: .whitespaces)
-            if !merged.isEmpty && !merged.hasSuffix(";") { merged += ";" }
-            merged += " color: \(css);"
-            tag = setAttribute(tag, name: "style", value: merged.trimmingCharacters(in: .whitespaces))
-        }
+        let existing = attributeValue(tag, name: "style") ?? ""
+        // Appending rather than replacing preserves MathJax's vertical-align,
+        // which callers embedding the SVG inline still rely on.
+        var merged = existing.trimmingCharacters(in: .whitespaces)
+        if !merged.isEmpty && !merged.hasSuffix(";") { merged += ";" }
+        merged += " color: \(color.cssColor);"
+        tag = setAttribute(tag, name: "style", value: merged.trimmingCharacters(in: .whitespaces))
 
         return rawSVG.replacingCharacters(in: head, with: tag)
     }

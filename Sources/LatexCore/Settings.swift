@@ -1,22 +1,22 @@
 import Foundation
 
-/// How the equation is coloured.
+/// How the equation is coloured. Every export carries an explicit colour, so
+/// the file looks the same wherever it lands.
 public enum ColorMode: Equatable, Codable, Sendable {
-    /// Leave MathJax's `currentColor` untouched so the equation inherits the
-    /// colour of whatever contains it. Matches the website's default.
-    case inherit
     case black
+    case white
     /// Any CSS colour string, e.g. `#0066cc` or `rebeccapurple`.
     case custom(String)
 
-    /// The CSS colour to stamp onto the SVG, or `nil` to leave it inheriting.
-    public var cssColor: String? {
+    /// The CSS colour to stamp onto the SVG. A blank custom value falls back to
+    /// black rather than emitting an invalid style.
+    public var cssColor: String {
         switch self {
-        case .inherit: return nil
         case .black: return "black"
+        case .white: return "white"
         case .custom(let value):
             let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-            return trimmed.isEmpty ? nil : trimmed
+            return trimmed.isEmpty ? "black" : trimmed
         }
     }
 }
@@ -56,7 +56,7 @@ public struct RenderSettings: Equatable, Codable, Sendable {
     public var scale: ScaleMode
 
     public init(displayMode: Bool = true,
-                color: ColorMode = .inherit,
+                color: ColorMode = .black,
                 scale: ScaleMode = .standard) {
         self.displayMode = displayMode
         self.color = color

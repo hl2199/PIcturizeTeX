@@ -36,16 +36,22 @@ struct SettingsPane: View {
             .labelsHidden()
 
             if model.colorChoice == .custom {
-                HStack(spacing: 8) {
-                    TextField("CSS colour", text: $model.customColorText)
+                // The colour well is the primary control; the CSS field is the
+                // escape hatch for named colours and exact values.
+                ColorPicker("Colour", selection: Binding(
+                    get: { Color(nsColor: NSColor(css: model.customColorText) ?? .labelColor) },
+                    set: { model.customColorText = $0.cssHexString }
+                ))
+
+                HStack(spacing: 6) {
+                    Text("CSS")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    TextField("#0066cc", text: $model.customColorText)
                         .textFieldStyle(.roundedBorder)
-                    ColorPicker("", selection: Binding(
-                        get: { Color(nsColor: NSColor(css: model.customColorText) ?? .labelColor) },
-                        set: { model.customColorText = $0.cssHexString }
-                    ))
-                    .labelsHidden()
+                        .font(.caption.monospaced())
                 }
-                Text("Any CSS colour, for example #0066cc or rebeccapurple.")
+                Text("Any CSS colour works here, for example rebeccapurple.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

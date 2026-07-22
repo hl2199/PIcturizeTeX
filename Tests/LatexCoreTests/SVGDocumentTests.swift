@@ -15,7 +15,7 @@ struct SVGDocumentTests {
     @Test("ex dimensions become pixels at the default scale")
     func convertsExToPixels() {
         let out = SVGDocument.finalize(rawSVG: sampleSVG, widthEx: 12.453, heightEx: 4.145,
-                                       pixelsPerEx: 8, color: .inherit)
+                                       pixelsPerEx: 8, color: .black)
         // 12.453 * 8 = 99.624, 4.145 * 8 = 33.16
         #expect(out.contains("width=\"99.624px\""))
         #expect(out.contains("height=\"33.16px\""))
@@ -25,17 +25,16 @@ struct SVGDocumentTests {
     @Test("a manual scale factor is honoured")
     func honoursManualScale() {
         let out = SVGDocument.finalize(rawSVG: sampleSVG, widthEx: 10, heightEx: 2,
-                                       pixelsPerEx: 15, color: .inherit)
+                                       pixelsPerEx: 15, color: .black)
         #expect(out.contains("width=\"150px\""))
         #expect(out.contains("height=\"30px\""))
     }
 
-    @Test("inherit mode leaves the colour unset")
-    func inheritLeavesColorUnset() {
+    @Test("white mode stamps white")
+    func whiteStampsWhite() {
         let out = SVGDocument.finalize(rawSVG: sampleSVG, widthEx: 1, heightEx: 1,
-                                       pixelsPerEx: 8, color: .inherit)
-        #expect(!out.contains("color:"), "inherit must not stamp a colour")
-        #expect(out.contains("currentColor"), "the fill must stay inheritable")
+                                       pixelsPerEx: 8, color: .white)
+        #expect(out.contains("color: white;"))
     }
 
     @Test("a colour is appended without discarding MathJax's own style")
@@ -53,18 +52,18 @@ struct SVGDocumentTests {
         #expect(out.contains("color: black;"))
     }
 
-    @Test("a blank custom colour behaves as inherit")
-    func blankCustomColorIsInherit() {
+    @Test("a blank custom colour falls back to black")
+    func blankCustomColorIsBlack() {
         let out = SVGDocument.finalize(rawSVG: sampleSVG, widthEx: 1, heightEx: 1,
                                        pixelsPerEx: 8, color: .custom("   "))
-        #expect(!out.contains("color:"), "a blank colour field must not stamp anything")
+        #expect(out.contains("color: black;"), "a blank colour field must not emit invalid CSS")
     }
 
     @Test("attribute names are not matched as substrings")
     func doesNotMatchSubstrings() {
         // `width` also occurs inside `stroke-width`, which must not be rewritten.
         let out = SVGDocument.finalize(rawSVG: sampleSVG, widthEx: 1, heightEx: 1,
-                                       pixelsPerEx: 8, color: .inherit)
+                                       pixelsPerEx: 8, color: .black)
         #expect(out.contains("stroke-width=\"0\""), "stroke-width must be untouched")
     }
 
@@ -81,7 +80,7 @@ struct SVGDocumentTests {
     func addsMissingDimensions() {
         let bare = "<svg xmlns=\"http://www.w3.org/2000/svg\"><g/></svg>"
         let out = SVGDocument.finalize(rawSVG: bare, widthEx: 2, heightEx: 3,
-                                       pixelsPerEx: 10, color: .inherit)
+                                       pixelsPerEx: 10, color: .black)
         #expect(out.contains("width=\"20px\""))
         #expect(out.contains("height=\"30px\""))
     }

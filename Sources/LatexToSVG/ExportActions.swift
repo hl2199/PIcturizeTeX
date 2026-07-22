@@ -43,14 +43,6 @@ extension AppModel {
         }
     }
 
-    /// Copies just the SVG markup as text, for pasting into an editor.
-    func copySVGSource() {
-        guard let svg = renderedSVG else { return }
-        let pasteboard = NSPasteboard.general
-        pasteboard.clearContents()
-        pasteboard.setString(SVGDocument.standaloneFile(svg: svg), forType: .string)
-    }
-
     /// Asks where to save, then writes the chosen format.
     func save(format: ExportFormat) async {
         guard renderedSVG != nil else { return }
@@ -74,34 +66,6 @@ extension AppModel {
         } catch {
             present(error)
         }
-    }
-
-    /// Supplies the dragged file lazily, so nothing is exported unless a drop
-    /// actually happens.
-    func makeDragProvider() -> NSItemProvider {
-        let provider = NSItemProvider()
-        let format = dragFormat
-        provider.suggestedName = "equation.\(format.fileExtension)"
-
-        provider.registerFileRepresentation(forTypeIdentifier: format.contentType.identifier,
-                                            fileOptions: [],
-                                            visibility: .all) { completion in
-            Task { @MainActor in
-                do {
-                    let bytes = try await self.data(for: format)
-                    let url = FileManager.default.temporaryDirectory
-                        .appendingPathComponent("equation-\(UUID().uuidString)")
-                        .appendingPathExtension(format.fileExtension)
-                    try bytes.write(to: url, options: .atomic)
-                    self.recordInHistory()
-                    completion(url, false, nil)
-                } catch {
-                    completion(nil, false, error)
-                }
-            }
-            return nil
-        }
-        return provider
     }
 
     private static let lastSaveDirectoryKey = "lastSaveDirectory"

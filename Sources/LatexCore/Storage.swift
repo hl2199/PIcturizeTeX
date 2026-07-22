@@ -2,20 +2,25 @@ import Foundation
 
 /// One remembered equation.
 ///
-/// Only the source and its settings are stored, never the rendered image: a
-/// render is cheap to reproduce and an SVG is not, so keeping history as plain
-/// text leaves it small and hand-editable.
+/// Alongside the source, the finalized SVG is kept so the history list can show
+/// the equation as it looked, without re-rendering. It is a few kilobytes of
+/// text per entry, and the file stays hand-editable.
 public struct HistoryEntry: Codable, Identifiable, Equatable, Sendable {
     public let id: UUID
     public var latex: String
     public var settings: RenderSettings
     public var date: Date
+    /// The finalized SVG at export time. Optional so entries from older
+    /// versions of the file still decode.
+    public var svg: String?
 
-    public init(id: UUID = UUID(), latex: String, settings: RenderSettings, date: Date) {
+    public init(id: UUID = UUID(), latex: String, settings: RenderSettings,
+                date: Date, svg: String? = nil) {
         self.id = id
         self.latex = latex
         self.settings = settings
         self.date = date
+        self.svg = svg
     }
 }
 
@@ -61,12 +66,13 @@ public final class HistoryStore {
     /// its colour or scale leaves one entry rather than a dozen near-identical
     /// ones. The settings of the most recent export win.
     @discardableResult
-    public func record(latex: String, settings: RenderSettings, date: Date = Date()) -> HistoryEntry? {
+    public func record(latex: String, settings: RenderSettings,
+                       svg: String? = nil, date: Date = Date()) -> HistoryEntry? {
         let trimmed = latex.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 
         entries.removeAll { $0.latex == trimmed }
-        let entry = HistoryEntry(latex: trimmed, settings: settings, date: date)
+        let entry = HistoryEntry(latex: trimmed, settings: settings, date: date, svg: svg)
         entries.insert(entry, at: 0)
         if entries.count > Self.capacity {
             entries.removeLast(entries.count - Self.capacity)

@@ -36,19 +36,25 @@ struct ContentView: View {
         ZStack {
             // A checkerboard would imply the background is part of the artwork;
             // a plain surface reads as "nothing here", which is accurate since
-            // every export is transparent.
-            Color(nsColor: .textBackgroundColor)
+            // every export is transparent. The surface darkens when the chosen
+            // equation colour would vanish against a light background.
+            if model.previewNeedsDarkBackground {
+                Color(red: 0.15, green: 0.15, blue: 0.17)
+            } else {
+                Color(nsColor: .textBackgroundColor)
+            }
 
-            SVGPreview(svg: model.renderedSVG,
-                       inheritedColor: .labelColor,
-                       zoom: 1.0)
+            SVGPreview(svg: model.renderedSVG)
                 .padding(20)
-                .onDrag { model.makeDragProvider() }
 
             if model.renderedSVG == nil && model.errorMessage == nil {
                 Text("Type an equation below")
                     .foregroundStyle(.tertiary)
             }
+
+            // Topmost so it, not the web view, receives the preview's mouse
+            // events: drag-out and the right-click Copy menu both live here.
+            PreviewDragSource(model: model)
         }
         .overlay(alignment: .bottom) { statusBar }
         .overlay(alignment: .topTrailing) {
@@ -85,13 +91,9 @@ struct ContentView: View {
                 }
                 Spacer()
 
-                Button {
-                    Task { await model.copyToPasteboard() }
-                } label: {
-                    Label("Copy", systemImage: "doc.on.doc")
-                }
-                .disabled(model.renderedSVG == nil)
-                .help("Copy as PDF, PNG and SVG at once")
+                Text("Drag the equation out, or right-click to copy")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
 
                 Menu {
                     ForEach(ExportFormat.allCases, id: \.self) { format in
@@ -118,67 +120,18 @@ struct ContentView: View {
                 Text("LaTeX")
                     .font(.headline)
                 Spacer()
-                if !model.autoUpdate {
-                    Button("Render", action: model.renderNow)
-                        .buttonStyle(.borderless)
-                        .keyboardShortcut(.return, modifiers: .command)
-                }
-                Toggle("Auto update", isOn: $model.autoUpdate)
-                    .toggleStyle(.checkbox)
-                    .font(.caption)
-                Toggle("SVG source", isOn: $model.showSource)
-                    .toggleStyle(.checkbox)
-                    .font(.caption)
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
 
             Divider()
 
-            if model.showSource {
-                VSplitView {
-                    latexField
-                    sourceDrawer
-                }
-            } else {
-                latexField
-            }
+            TextEditor(text: $model.latex)
+                .font(.system(.body, design: .monospaced))
+                .padding(6)
+                .frame(minHeight: 80)
         }
         .background(Color(nsColor: .textBackgroundColor))
-    }
-
-    private var latexField: some View {
-        TextEditor(text: $model.latex)
-            .font(.system(.body, design: .monospaced))
-            .padding(6)
-            .frame(minHeight: 80)
-    }
-
-    private var sourceDrawer: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("SVG source")
-                    .font(.caption.bold())
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Button("Copy source", action: model.copySVGSource)
-                    .buttonStyle(.link)
-                    .font(.caption)
-                    .disabled(model.renderedSVG == nil)
-            }
-            .padding(.horizontal, 12)
-            .padding(.top, 6)
-
-            ScrollView {
-                Text(model.renderedSVG.map { SVGDocument.standaloneFile(svg: $0) } ?? "")
-                    .font(.system(.caption2, design: .monospaced))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 12)
-                    .padding(.bottom, 8)
-            }
-        }
-        .frame(minHeight: 80)
     }
 
     // MARK: Toolbar

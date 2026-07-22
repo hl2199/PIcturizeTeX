@@ -1,18 +1,20 @@
+import AppKit
 import Foundation
 import LatexCore
 import LatexRender
 import Observation
 
 /// Which colour control the user has selected. Kept separate from `ColorMode`
-/// so that switching to Black and back does not discard the typed CSS colour.
+/// so that switching to Black and back does not discard the chosen custom
+/// colour.
 enum ColorChoice: String, CaseIterable, Identifiable {
-    case inherit, black, custom
+    case black, white, custom
     var id: String { rawValue }
 
     var label: String {
         switch self {
-        case .inherit: return "Container colour"
         case .black: return "Black"
+        case .white: return "White"
         case .custom: return "Custom"
         }
     }
@@ -54,15 +56,11 @@ final class AppModel {
     // MARK: Settings
 
     var displayMode = true { didSet { scheduleRender() } }
-    var colorChoice: ColorChoice = .inherit { didSet { scheduleRender() } }
+    var colorChoice: ColorChoice = .black { didSet { scheduleRender() } }
     var customColorText = "#0066cc" { didSet { scheduleRender() } }
     var scaleChoice: ScaleChoice = .standard { didSet { scheduleRender() } }
     var fontCSSText = "20px Helvetica" { didSet { scheduleRender() } }
     var manualPixelsPerEx: Double = 15 { didSet { scheduleRender() } }
-
-    /// When off, the preview only updates on an explicit request, matching the
-    /// website's `auto update` checkbox.
-    var autoUpdate = true
 
     // MARK: Export options
 
@@ -73,8 +71,11 @@ final class AppModel {
 
     // MARK: View state
 
-    var showHistory = false
-    var showSource = false
+    /// Restored from the previous session, so the sidebar comes back the way
+    /// it was left. Open on a fresh install.
+    var showHistory = UserDefaults.standard.object(forKey: "showHistory") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(showHistory, forKey: "showHistory") }
+    }
 
     // MARK: Output
 
@@ -112,9 +113,27 @@ final class AppModel {
 
     var colorMode: ColorMode {
         switch colorChoice {
-        case .inherit: return .inherit
         case .black: return .black
+        case .white: return .white
         case .custom: return .custom(customColorText)
+        }
+    }
+
+    /// Whether the preview needs a dark surface behind the equation. A white or
+    /// pale equation on the default light background would be invisible.
+    var previewNeedsDarkBackground: Bool {
+        switch colorChoice {
+        case .black: return false
+        case .white: return true
+        case .custom:
+            guard let color = NSColor(css: customColorText)?.usingColorSpace(.sRGB) else {
+                return false
+            }
+            // Relative luminance, roughly: bright colours need the dark surface.
+            let luminance = 0.2126 * color.redComponent
+                          + 0.7152 * color.greenComponent
+                          + 0.0722 * color.blueComponent
+            return luminance > 0.7
         }
     }
 
@@ -141,7 +160,6 @@ final class AppModel {
 
     /// Debounces renders so that typing does not queue one job per keystroke.
     func scheduleRender() {
-        guard autoUpdate else { return }
         renderTask?.cancel()
         renderTask = Task {
             try? await Task.sleep(for: .milliseconds(200))
@@ -150,8 +168,8 @@ final class AppModel {
         }
     }
 
-    /// Renders immediately, used by the manual-refresh button when auto update
-    /// is switched off.
+    /// Renders immediately, skipping the debounce, for launch and history
+    /// restore.
     func renderNow() {
         renderTask?.cancel()
         renderTask = Task { await render() }
@@ -244,7 +262,7 @@ final class AppModel {
     /// render, so the list holds finished equations instead of fragments.
     func recordInHistory() {
         guard let store = historyStore else { return }
-        store.record(latex: latex, settings: currentSettings)
+        store.record(latex: latex, settings: currentSettings, svg: renderedSVG)
         history = store.entries
     }
 
@@ -253,8 +271,8 @@ final class AppModel {
         displayMode = entry.settings.displayMode
 
         switch entry.settings.color {
-        case .inherit: colorChoice = .inherit
         case .black: colorChoice = .black
+        case .white: colorChoice = .white
         case .custom(let value):
             colorChoice = .custom
             customColorText = value

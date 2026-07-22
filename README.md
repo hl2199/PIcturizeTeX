@@ -21,19 +21,20 @@ notarization.
 
 ## What it does
 
-- **Live preview** as you type (toggleable), with errors shown without blanking the
-  last good render.
-- **Copy** (⇧⌘C) puts PDF + PNG + SVG on the clipboard as one item — Keynote takes the
-  PDF, Figma the SVG, Slack the PNG.
-- **Drag the preview** into any app or Finder to drop a file (format configurable,
-  default PDF).
+- **Live preview** as you type, shown at the equation's true export size; errors are
+  reported without blanking the last good render.
+- **Right-click the preview to Copy** (or ⇧⌘C): PDF + PNG + SVG go on the clipboard as
+  one item — Keynote takes the PDF, Figma the SVG, Slack the PNG.
+- **Drag the equation out** into any app or Finder to drop a file (format
+  configurable, default PDF).
 - **Save** as SVG (⌘S), PDF (⌘D), or PNG (⌘E); remembers the last folder.
-- **Color**: inherit / black / any CSS color, with a native color well.
+- **Color**: black / white / custom, chosen with a native color well (CSS text as a
+  secondary input). The preview background darkens automatically for light colors.
 - **Scaling**: default (1 ex = 8 px), match a CSS font, or manual px-per-ex.
-- **Display mode** toggle, **SVG source** view (⌘U), transparent-background PNG at
-  96–600 dpi.
-- **History** (⇧⌘H): equations you've exported, restorable with their settings.
-  Hidden by default.
+- **Display mode** toggle; transparent-background PNG at 96–600 dpi.
+- **History**: equations you've exported, shown as rendered thumbnails, restorable
+  with their settings. Toggled from the toolbar; open/closed state persists across
+  launches.
 - **Macro preamble**: a persistent `\newcommand` block applied to every render.
 
 ## Layout
