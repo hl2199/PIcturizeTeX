@@ -13,8 +13,8 @@ struct MenuBarPane: View {
     /// toggle, so removal here can be undone from the main window.
     @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
 
-    private let paneWidth: CGFloat = 320
-    private let previewHeight: CGFloat = 180
+    private let paneWidth: CGFloat = 400
+    private let previewHeight: CGFloat = 190
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
