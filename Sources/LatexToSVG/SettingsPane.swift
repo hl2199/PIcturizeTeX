@@ -203,7 +203,7 @@ struct SettingsPane: View {
 
     @ViewBuilder
     private var menuBarRows: some View {
-        Toggle("Show π in the menu bar", isOn: $showMenuBarExtra)
+        Toggle("Show in menu bar", isOn: $showMenuBarExtra)
             .toggleStyle(.switch)
             .controlSize(.small)
 
