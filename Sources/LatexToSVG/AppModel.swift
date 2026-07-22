@@ -64,7 +64,7 @@ final class AppModel {
 
     // MARK: Export options
 
-    var pngDPI: Double = 300
+    var pngDPI: Double = 300 { didSet { refreshExportCache() } }
     /// A drag produces exactly one file, so unlike the clipboard it must commit
     /// to a single format. PDF pastes as vector into the widest range of apps.
     var dragFormat: ExportFormat = .pdf
@@ -88,6 +88,27 @@ final class AppModel {
     private(set) var isRendering = false
 
     private(set) var history: [HistoryEntry] = []
+
+    /// Ready-made PDF and PNG for the current render.
+    ///
+    /// Filled in the background after every successful render, because drag
+    /// flavours are demanded synchronously mid-drag -- there is no opportunity
+    /// to run the async export pipeline once the mouse is moving. Tagged with
+    /// the SVG it was built from so staleness is detectable.
+    struct ExportCache {
+        let svg: String
+        let pdf: Data
+        let png: Data
+        let dpi: Double
+    }
+    private(set) var exportCache: ExportCache?
+    private var cacheTask: Task<Void, Never>?
+
+    /// The cache, but only if it matches what is currently on screen.
+    var freshExportCache: ExportCache? {
+        guard let cache = exportCache, cache.svg == renderedSVG else { return nil }
+        return cache
+    }
 
     // MARK: Collaborators
 
@@ -204,6 +225,7 @@ final class AppModel {
             pixelWidth = size.width
             pixelHeight = size.height
             errorMessage = nil
+            refreshExportCache()
         } catch let RenderError.invalidTeX(message) {
             // Recoverable: keep the last good preview on screen.
             errorMessage = message
@@ -242,20 +264,55 @@ final class AppModel {
 
     // MARK: - Export
 
-    /// Builds the bytes for one format from the current render.
+    private func refreshExportCache() {
+        cacheTask?.cancel()
+        guard let svg = renderedSVG, pixelWidth > 0, pixelHeight > 0 else {
+            exportCache = nil
+            return
+        }
+        let (width, height, dpi) = (pixelWidth, pixelHeight, pngDPI)
+        cacheTask = Task {
+            do {
+                let pdf = try await exporter.pdfData(svg: svg, widthPx: width, heightPx: height)
+                let png = try Exporter.pngData(pdf: pdf, dpi: dpi)
+                guard !Task.isCancelled else { return }
+                exportCache = ExportCache(svg: svg, pdf: pdf, png: png, dpi: dpi)
+            } catch {
+                // Exports fall back to generating on demand; nothing to do here.
+            }
+        }
+    }
+
+    /// Builds the bytes for one format from the current render, using the
+    /// cache when it is fresh.
     func data(for format: ExportFormat) async throws -> Data {
         guard let svg = renderedSVG, pixelWidth > 0, pixelHeight > 0 else {
             throw RenderError.engineFailure("There is nothing to export yet.")
         }
-        switch format {
-        case .svg:
+        if format == .svg {
             return Data(SVGDocument.standaloneFile(svg: svg).utf8)
-        case .pdf:
-            return try await exporter.pdfData(svg: svg, widthPx: pixelWidth, heightPx: pixelHeight)
-        case .png:
-            let pdf = try await exporter.pdfData(svg: svg, widthPx: pixelWidth, heightPx: pixelHeight)
-            return try Exporter.pngData(pdf: pdf, dpi: pngDPI)
         }
+
+        // Wait for any in-flight cache build rather than racing it for the
+        // shared export web view.
+        await cacheTask?.value
+        if let cache = freshExportCache {
+            switch format {
+            case .pdf:
+                return cache.pdf
+            case .png where cache.dpi == pngDPI:
+                return cache.png
+            case .png:
+                return try Exporter.pngData(pdf: cache.pdf, dpi: pngDPI)
+            case .svg:
+                break
+            }
+        }
+
+        // The cache build failed or is stale; generate directly.
+        let pdf = try await exporter.pdfData(svg: svg, widthPx: pixelWidth, heightPx: pixelHeight)
+        if format == .pdf { return pdf }
+        return try Exporter.pngData(pdf: pdf, dpi: pngDPI)
     }
 
     /// Records the current equation in history. Called on export rather than on

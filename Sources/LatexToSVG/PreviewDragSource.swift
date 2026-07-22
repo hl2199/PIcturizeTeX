@@ -29,6 +29,42 @@ struct PreviewDragSource: NSViewRepresentable {
     }
 }
 
+/// A file promise that also carries the equation as concrete PDF and PNG data.
+///
+/// The promise alone only works with targets that implement the file-promise
+/// contract (Finder, Mail). Document apps such as PowerPoint and Illustrator
+/// ignore promises and look for image data on the drag pasteboard -- the same
+/// flavours a drag from a web browser carries. Offering both makes the one
+/// drag work everywhere: file-oriented targets take the promise, image-oriented
+/// targets take the data.
+final class EquationPromiseProvider: NSFilePromiseProvider {
+    var pdfData: Data?
+    var pngData: Data?
+
+    override func writableTypes(for pasteboard: NSPasteboard) -> [NSPasteboard.PasteboardType] {
+        var types = super.writableTypes(for: pasteboard)
+        if pdfData != nil { types.append(.pdf) }
+        if pngData != nil { types.append(.png) }
+        return types
+    }
+
+    override func writingOptions(forType type: NSPasteboard.PasteboardType,
+                                 pasteboard: NSPasteboard) -> NSPasteboard.WritingOptions {
+        switch type {
+        case .pdf, .png: return []
+        default: return super.writingOptions(forType: type, pasteboard: pasteboard)
+        }
+    }
+
+    override func pasteboardPropertyList(forType type: NSPasteboard.PasteboardType) -> Any? {
+        switch type {
+        case .pdf: return pdfData
+        case .png: return pngData
+        default: return super.pasteboardPropertyList(forType: type)
+        }
+    }
+}
+
 final class DragSourceView: NSView, NSDraggingSource {
     weak var model: AppModel?
 
@@ -56,8 +92,15 @@ final class DragSourceView: NSView, NSDraggingSource {
         )
         promiseDelegate = delegate
 
-        let provider = NSFilePromiseProvider(fileType: format.contentType.identifier,
-                                             delegate: delegate)
+        let provider = EquationPromiseProvider(fileType: format.contentType.identifier,
+                                               delegate: delegate)
+        // Concrete flavours come from the cache filled after the last render;
+        // pasteboard data is demanded synchronously, so this is the only
+        // moment it can be attached.
+        if let cache = model.freshExportCache {
+            provider.pdfData = cache.pdf
+            provider.pngData = cache.png
+        }
         let item = NSDraggingItem(pasteboardWriter: provider)
 
         let image = dragImage()
@@ -137,6 +180,7 @@ final class EquationFilePromiseDelegate: NSObject, NSFilePromiseProviderDelegate
                 try data.write(to: url, options: .atomic)
                 completionHandler(nil)
             } catch {
+                NSLog("File promise fulfilment failed: %@", String(describing: error))
                 completionHandler(error)
             }
         }
