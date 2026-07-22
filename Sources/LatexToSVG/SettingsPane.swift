@@ -51,13 +51,17 @@ struct SettingsPane: View {
             ))
             .labelsHidden()
         } detail: {
+            // Pushed to the trailing edge so the field sits directly beneath
+            // the colour well above it.
+            Spacer(minLength: 0)
             TextField("", text: Binding(
                 get: { model.customColorText },
                 set: { model.customColorText = $0; model.colorChoice = .custom }
             ), prompt: Text("#0066cc"))
             .textFieldStyle(.roundedBorder)
             .font(.body.monospaced())
-            .frame(width: 120)
+            .multilineTextAlignment(.trailing)
+            .frame(width: 100)
         }
     }
 
