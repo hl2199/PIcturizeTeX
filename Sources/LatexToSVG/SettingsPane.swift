@@ -97,7 +97,7 @@ struct SettingsPane: View {
             .multilineTextAlignment(.trailing)
             .frame(width: 44)
 
-            Text("px")
+            Text("pt")
                 .foregroundStyle(.secondary)
         }
 
@@ -118,6 +118,14 @@ struct SettingsPane: View {
             Text("px")
                 .foregroundStyle(.secondary)
         }
+
+        Text("Match a font sizes the equation to sit beside document text in "
+             + "that font at that point size. An ex is the height of a "
+             + "lowercase x; a px is one pixel of the exported image, and "
+             + "becomes one point in PDF.")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
     }
 
     // MARK: Rendering
