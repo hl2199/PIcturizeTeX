@@ -7,6 +7,59 @@ import SwiftUI
 /// Runs on its own `AppModel` instance, so it works with the main window
 /// closed and its settings never fight the main window's. Drag-out and
 /// right-click copy reuse the same machinery as the desk.
+/// Receives NSColorPanel changes. Kept alive for the app's lifetime because
+/// the panel holds its target unsafely -- if the target deallocated while the
+/// panel was open, the next colour change would touch freed memory.
+@MainActor
+final class MenuBarColorPanelTarget: NSObject {
+    static let shared = MenuBarColorPanelTarget()
+    var onColor: ((NSColor) -> Void)?
+
+    @objc func colorChanged(_ sender: NSColorPanel) {
+        onColor?(sender.color)
+    }
+}
+
+/// A colour well that works inside the menu bar pane.
+///
+/// SwiftUI's ColorPicker silently does nothing there: it orders the shared
+/// colour panel front, but macOS only shows that panel for the active app,
+/// and a status-item window never activates the app. This well activates the
+/// app explicitly and drives NSColorPanel by hand.
+struct MenuBarColorWell: View {
+    @Bindable var model: AppModel
+
+    var body: some View {
+        Button {
+            let panel = NSColorPanel.shared
+            panel.showsAlpha = false
+            if let current = NSColor(css: model.customColorText) {
+                panel.color = current
+            }
+            MenuBarColorPanelTarget.shared.onColor = { [weak model] color in
+                guard let model, let srgb = color.usingColorSpace(.sRGB) else { return }
+                model.customColorText = String(format: "#%02x%02x%02x",
+                                               Int(round(srgb.redComponent * 255)),
+                                               Int(round(srgb.greenComponent * 255)),
+                                               Int(round(srgb.blueComponent * 255)))
+                model.colorChoice = .custom
+            }
+            panel.setTarget(MenuBarColorPanelTarget.shared)
+            panel.setAction(#selector(MenuBarColorPanelTarget.colorChanged(_:)))
+            NSApp.activate(ignoringOtherApps: true)
+            panel.makeKeyAndOrderFront(nil)
+        } label: {
+            RoundedRectangle(cornerRadius: 5)
+                .fill(Color(nsColor: NSColor(css: model.customColorText) ?? .black))
+                .frame(width: 38, height: 20)
+                .overlay(RoundedRectangle(cornerRadius: 5)
+                    .stroke(Color.secondary.opacity(0.4)))
+        }
+        .buttonStyle(.plain)
+        .help("Choose a custom color")
+    }
+}
+
 struct MenuBarPane: View {
     @Bindable var model: AppModel
     /// Shared with the app scene's MenuBarExtra(isInserted:) and the settings
@@ -41,14 +94,7 @@ struct MenuBarPane: View {
                 .labelsHidden()
                 .fixedSize()
 
-                ColorPicker("", selection: Binding(
-                    get: { Color(nsColor: NSColor(css: model.customColorText) ?? .labelColor) },
-                    set: {
-                        model.customColorText = $0.cssHexString
-                        model.colorChoice = .custom
-                    }
-                ))
-                .labelsHidden()
+                MenuBarColorWell(model: model)
             }
 
             HStack {
