@@ -43,11 +43,12 @@ struct SettingsPane: View {
         radioRow("Custom", selected: model.colorChoice == .custom) {
             model.colorChoice = .custom
         } trailing: {
-            // The system colour panel carries its own hex entry too. Picking a
-            // colour or editing the field selects Custom, so neither control
-            // is ever dead to a click.
+            // The well always shows the colour the equation currently renders
+            // in -- black or white included -- and the system colour panel
+            // carries its own hex entry too. Picking a colour or editing the
+            // field selects Custom, so neither control is ever dead to a click.
             ColorPicker("", selection: Binding(
-                get: { Color(nsColor: NSColor(css: model.customColorText) ?? .labelColor) },
+                get: { Color(nsColor: model.effectiveColor) },
                 set: {
                     model.customColorText = $0.cssHexString
                     model.colorChoice = .custom

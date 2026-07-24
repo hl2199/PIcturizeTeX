@@ -137,6 +137,16 @@ final class AppModel {
         }
     }
 
+    /// The colour the equation currently renders in, whichever mode produced
+    /// it -- what the colour wells display.
+    var effectiveColor: NSColor {
+        switch colorChoice {
+        case .black: return .black
+        case .white: return .white
+        case .custom: return NSColor(css: customColorText) ?? .black
+        }
+    }
+
     /// Whether the preview needs a dark surface behind the equation. A white or
     /// pale equation on the default light background would be invisible.
     var previewNeedsDarkBackground: Bool {

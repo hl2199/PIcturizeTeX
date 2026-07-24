@@ -33,9 +33,7 @@ struct MenuBarColorWell: View {
         Button {
             let panel = NSColorPanel.shared
             panel.showsAlpha = false
-            if let current = NSColor(css: model.customColorText) {
-                panel.color = current
-            }
+            panel.color = model.effectiveColor
             MenuBarColorPanelTarget.shared.onColor = { [weak model] color in
                 guard let model, let srgb = color.usingColorSpace(.sRGB) else { return }
                 model.customColorText = String(format: "#%02x%02x%02x",
@@ -49,8 +47,10 @@ struct MenuBarColorWell: View {
             NSApp.activate(ignoringOtherApps: true)
             panel.makeKeyAndOrderFront(nil)
         } label: {
+            // Always the colour the equation currently renders in, whichever
+            // mode is selected.
             RoundedRectangle(cornerRadius: 5)
-                .fill(Color(nsColor: NSColor(css: model.customColorText) ?? .black))
+                .fill(Color(nsColor: model.effectiveColor))
                 .frame(width: 38, height: 20)
                 .overlay(RoundedRectangle(cornerRadius: 5)
                     .stroke(Color.secondary.opacity(0.4)))
