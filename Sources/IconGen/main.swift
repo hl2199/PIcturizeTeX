@@ -55,29 +55,37 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
         canvas.lockFocus()
 
         // Standard Big Sur icon grid: an 824-pt squircle centred on the canvas.
+        // The viridian border is built from fills -- an accent-coloured outer
+        // squircle with the paper inset on top -- because a wide stroke() in
+        // this offscreen context corrupted later image drawing.
         let rect = NSRect(x: 100, y: 100, width: 824, height: 824)
         let squircle = NSBezierPath(roundedRect: rect, xRadius: 186, yRadius: 186)
+        let borderWidth: CGFloat = 14
+        let paperRect = rect.insetBy(dx: borderWidth, dy: borderWidth)
+        let paper = NSBezierPath(roundedRect: paperRect,
+                                 xRadius: 186 - borderWidth, yRadius: 186 - borderWidth)
 
-        // Soft drop shadow, as macOS icons carry their own.
+        // Soft drop shadow, as macOS icons carry their own; the outer fill is
+        // the border colour.
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
         shadow.shadowColor = NSColor.black.withAlphaComponent(0.30)
         shadow.shadowOffset = NSSize(width: 0, height: -12)
         shadow.shadowBlurRadius = 24
         shadow.set()
-        NSColor(srgbRed: 0.992, green: 0.988, blue: 0.976, alpha: 1).setFill()
+        NSColor(srgbRed: 0.18, green: 0.431, blue: 0.369, alpha: 1).setFill()
         squircle.fill()
         NSGraphicsContext.restoreGraphicsState()
 
-        // A whisper of a gradient so the paper reads as material.
+        // The paper sheet, inset to leave the border showing.
         NSGradient(colors: [
             NSColor(srgbRed: 1.0, green: 0.997, blue: 0.99, alpha: 1),
             NSColor(srgbRed: 0.975, green: 0.968, blue: 0.95, alpha: 1),
-        ])?.draw(in: squircle, angle: -90)
+        ])?.draw(in: paper, angle: -90)
 
         // The desk's dot grid, clipped to the sheet.
         NSGraphicsContext.saveGraphicsState()
-        squircle.setClip()
+        paper.setClip()
         NSColor(srgbRed: 0.1, green: 0.1, blue: 0.12, alpha: 0.055).setFill()
         let step: CGFloat = 64
         var y = rect.minY + step / 2
