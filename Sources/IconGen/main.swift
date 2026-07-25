@@ -60,7 +60,7 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
         // this offscreen context corrupted later image drawing.
         let rect = NSRect(x: 100, y: 100, width: 824, height: 824)
         let squircle = NSBezierPath(roundedRect: rect, xRadius: 186, yRadius: 186)
-        let borderWidth: CGFloat = 14
+        let borderWidth: CGFloat = 30
         let paperRect = rect.insetBy(dx: borderWidth, dy: borderWidth)
         let paper = NSBezierPath(roundedRect: paperRect,
                                  xRadius: 186 - borderWidth, yRadius: 186 - borderWidth)
