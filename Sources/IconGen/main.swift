@@ -64,22 +64,10 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
         canvas.lockFocus()
 
         // Standard Big Sur icon grid: an 824-pt squircle centred on the canvas.
-        // The border is built from nested fills, outermost first.
         let rect = NSRect(x: 100, y: 100, width: 824, height: 824)
         let squircle = NSBezierPath(roundedRect: rect, xRadius: 186, yRadius: 186)
-        // A hairline of paper-white at the very perimeter separates the
-        // viridian ring from dark backgrounds, where it otherwise melts away.
-        let rimWidth: CGFloat = 8
-        let ringRect = rect.insetBy(dx: rimWidth, dy: rimWidth)
-        let ring = NSBezierPath(roundedRect: ringRect,
-                                xRadius: 186 - rimWidth, yRadius: 186 - rimWidth)
-        let borderWidth: CGFloat = 95
-        let paperRect = rect.insetBy(dx: borderWidth, dy: borderWidth)
-        let paper = NSBezierPath(roundedRect: paperRect,
-                                 xRadius: 186 - borderWidth, yRadius: 186 - borderWidth)
 
-        // Soft drop shadow, as macOS icons carry their own; the outermost fill
-        // is the white rim, with the viridian ring inset on top of it.
+        // Soft drop shadow, as macOS icons carry their own.
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
         shadow.shadowColor = NSColor.black.withAlphaComponent(0.30)
@@ -90,18 +78,15 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
         squircle.fill()
         NSGraphicsContext.restoreGraphicsState()
 
-        NSColor(srgbRed: 0.18, green: 0.431, blue: 0.369, alpha: 1).setFill()
-        ring.fill()
-
-        // The paper sheet, inset to leave the border showing.
+        // A whisper of a gradient so the paper reads as material.
         NSGradient(colors: [
             NSColor(srgbRed: 1.0, green: 0.997, blue: 0.99, alpha: 1),
             NSColor(srgbRed: 0.975, green: 0.968, blue: 0.95, alpha: 1),
-        ])?.draw(in: paper, angle: -90)
+        ])?.draw(in: squircle, angle: -90)
 
         // The desk's dot grid, clipped to the sheet.
         NSGraphicsContext.saveGraphicsState()
-        paper.setClip()
+        squircle.setClip()
         NSColor(srgbRed: 0.1, green: 0.1, blue: 0.12, alpha: 0.055).setFill()
         let step: CGFloat = 64
         var y = rect.minY + step / 2
@@ -118,7 +103,7 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
         // The glyph, optically centred (a touch above geometric centre). Drawn
         // into an explicit rect: the exporter stamps the PNG with its true
         // export point size, which is far smaller than the icon needs.
-        let targetHeight: CGFloat = 420
+        let targetHeight: CGFloat = 460
         let aspect = glyph.size.width / glyph.size.height
         let gRect = NSRect(x: rect.midX - targetHeight * aspect / 2,
                            y: rect.midY - targetHeight / 2 + 10,
