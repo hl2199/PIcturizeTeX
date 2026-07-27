@@ -9,7 +9,7 @@ struct LatexToSVGApp: App {
     @State private var menuBarModel = AppModel(menuBarLite: true)
     /// One persisted flag, shared with the settings toggle and the pane's
     /// remove button via the same @AppStorage key.
-    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
+    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = false
 
     var body: some Scene {
         WindowGroup {

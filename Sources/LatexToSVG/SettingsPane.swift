@@ -10,7 +10,7 @@ struct SettingsPane: View {
     @Bindable var model: AppModel
     /// Shared with the app scene's MenuBarExtra(isInserted:) and the pane's
     /// remove button.
-    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
+    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = false
 
     var body: some View {
         ScrollView {

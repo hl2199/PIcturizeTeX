@@ -64,7 +64,7 @@ struct MenuBarPane: View {
     @Bindable var model: AppModel
     /// Shared with the app scene's MenuBarExtra(isInserted:) and the settings
     /// toggle, so removal here can be undone from the main window.
-    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = true
+    @AppStorage("showMenuBarExtra") private var showMenuBarExtra = false
 
     private let paneWidth: CGFloat = 400
     private let previewHeight: CGFloat = 190
