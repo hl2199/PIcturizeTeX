@@ -20,12 +20,21 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
                 let svg = SVGDocument.finalize(rawSVG: r.svg, widthEx: r.widthEx, heightEx: r.heightEx,
                                                pixelsPerEx: 100, color: .custom("#2E6E5E"))
                 let size = SVGDocument.pixelSize(widthEx: r.widthEx, heightEx: r.heightEx, pixelsPerEx: 100)
-                let pdf = try await exporter.pdfData(svg: svg, widthPx: size.width, heightPx: size.height)
-                // Rasterise so the glyph is ~480 px tall on the 1024 canvas.
-                let glyphDPI = 96.0 * (960.0 / size.height)
-                let glyphPNG = try Exporter.pngData(pdf: pdf, dpi: glyphDPI)
-                guard let glyph = NSImage(data: glyphPNG) else {
-                    throw RenderError.engineFailure("glyph PNG undecodable")
+                // The export webview occasionally captures before the SVG has
+                // painted, yielding a blank glyph (this bit us twice and was
+                // misdiagnosed as a drawing bug). Verify pixels and retry.
+                var glyphPNG = Data()
+                for attempt in 1...3 {
+                    let pdf = try await exporter.pdfData(svg: svg,
+                                                         widthPx: size.width, heightPx: size.height)
+                    // Rasterise at 2x the drawn size so the master stays sharp.
+                    glyphPNG = try Exporter.pngData(pdf: pdf, dpi: 96.0 * (960.0 / size.height))
+                    if Self.hasOpaquePixels(glyphPNG) { break }
+                    print("attempt \(attempt): blank glyph, retrying")
+                    try await Task.sleep(for: .milliseconds(300))
+                }
+                guard Self.hasOpaquePixels(glyphPNG), let glyph = NSImage(data: glyphPNG) else {
+                    throw RenderError.engineFailure("glyph stayed blank after 3 attempts")
                 }
 
                 let master = Self.compose(glyph: glyph)
@@ -55,27 +64,34 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
         canvas.lockFocus()
 
         // Standard Big Sur icon grid: an 824-pt squircle centred on the canvas.
-        // The viridian border is built from fills -- an accent-coloured outer
-        // squircle with the paper inset on top -- because a wide stroke() in
-        // this offscreen context corrupted later image drawing.
+        // The border is built from nested fills, outermost first.
         let rect = NSRect(x: 100, y: 100, width: 824, height: 824)
         let squircle = NSBezierPath(roundedRect: rect, xRadius: 186, yRadius: 186)
+        // A hairline of paper-white at the very perimeter separates the
+        // viridian ring from dark backgrounds, where it otherwise melts away.
+        let rimWidth: CGFloat = 8
+        let ringRect = rect.insetBy(dx: rimWidth, dy: rimWidth)
+        let ring = NSBezierPath(roundedRect: ringRect,
+                                xRadius: 186 - rimWidth, yRadius: 186 - rimWidth)
         let borderWidth: CGFloat = 95
         let paperRect = rect.insetBy(dx: borderWidth, dy: borderWidth)
         let paper = NSBezierPath(roundedRect: paperRect,
                                  xRadius: 186 - borderWidth, yRadius: 186 - borderWidth)
 
-        // Soft drop shadow, as macOS icons carry their own; the outer fill is
-        // the border colour.
+        // Soft drop shadow, as macOS icons carry their own; the outermost fill
+        // is the white rim, with the viridian ring inset on top of it.
         NSGraphicsContext.saveGraphicsState()
         let shadow = NSShadow()
         shadow.shadowColor = NSColor.black.withAlphaComponent(0.30)
         shadow.shadowOffset = NSSize(width: 0, height: -12)
         shadow.shadowBlurRadius = 24
         shadow.set()
-        NSColor(srgbRed: 0.18, green: 0.431, blue: 0.369, alpha: 1).setFill()
+        NSColor(srgbRed: 0.992, green: 0.988, blue: 0.976, alpha: 1).setFill()
         squircle.fill()
         NSGraphicsContext.restoreGraphicsState()
+
+        NSColor(srgbRed: 0.18, green: 0.431, blue: 0.369, alpha: 1).setFill()
+        ring.fill()
 
         // The paper sheet, inset to leave the border showing.
         NSGradient(colors: [
@@ -112,6 +128,17 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
 
         canvas.unlockFocus()
         return canvas
+    }
+
+    /// True if the PNG contains any meaningfully opaque pixel.
+    static func hasOpaquePixels(_ png: Data) -> Bool {
+        guard let rep = NSBitmapImageRep(data: png) else { return false }
+        for x in stride(from: 0, to: rep.pixelsWide, by: 4) {
+            for y in stride(from: 0, to: rep.pixelsHigh, by: 4) {
+                if (rep.colorAt(x: x, y: y)?.alphaComponent ?? 0) > 0.5 { return true }
+            }
+        }
+        return false
     }
 
     static func writePNG(_ image: NSImage, pixels: Int, to url: URL) throws {
