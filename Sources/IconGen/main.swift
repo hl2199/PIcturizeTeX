@@ -60,7 +60,7 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
         // this offscreen context corrupted later image drawing.
         let rect = NSRect(x: 100, y: 100, width: 824, height: 824)
         let squircle = NSBezierPath(roundedRect: rect, xRadius: 186, yRadius: 186)
-        let borderWidth: CGFloat = 70
+        let borderWidth: CGFloat = 95
         let paperRect = rect.insetBy(dx: borderWidth, dy: borderWidth)
         let paper = NSBezierPath(roundedRect: paperRect,
                                  xRadius: 186 - borderWidth, yRadius: 186 - borderWidth)
@@ -102,7 +102,7 @@ final class IconDelegate: NSObject, NSApplicationDelegate {
         // The glyph, optically centred (a touch above geometric centre). Drawn
         // into an explicit rect: the exporter stamps the PNG with its true
         // export point size, which is far smaller than the icon needs.
-        let targetHeight: CGFloat = 460
+        let targetHeight: CGFloat = 420
         let aspect = glyph.size.width / glyph.size.height
         let gRect = NSRect(x: rect.midX - targetHeight * aspect / 2,
                            y: rect.midY - targetHeight / 2 + 10,
